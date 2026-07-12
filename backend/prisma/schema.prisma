@@ -1,0 +1,280 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id           String      @id @default(uuid())
+  name         String
+  email        String      @unique
+  passwordHash String
+  role         Role        @default(EMPLOYEE)
+  departmentId String?
+  department   Department? @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  status       UserStatus  @default(ACTIVE)
+
+  sessions Session[]
+  assets   Asset[]
+
+  allocationsTo AssetAllocation[] @relation("AllocatedTo")
+  allocationsBy AssetAllocation[] @relation("AllocatedBy")
+  returnsBy     AssetAllocation[] @relation("ReturnedBy")
+  auditLogs     AuditLog[]
+
+  bookingsBooked   ResourceBooking[] @relation("BookedBy")
+  bookingsApproved ResourceBooking[] @relation("ApprovedBy")
+
+  maintenanceReported MaintenanceRequest[] @relation("ReportedBy")
+  maintenanceAssigned MaintenanceRequest[] @relation("Technician")
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  createdBy String?
+  updatedBy String?
+  deletedAt DateTime?
+  version   Int       @default(1)
+}
+
+enum Role {
+  ADMIN
+  ASSET_MANAGER
+  DEPARTMENT_HEAD
+  EMPLOYEE
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+}
+
+model Department {
+  id                 String           @id @default(uuid())
+  name               String           @unique
+  parentDepartmentId String?
+  parentDepartment   Department?      @relation("DepartmentHierarchy", fields: [parentDepartmentId], references: [id], onDelete: Restrict)
+  subDepartments     Department[]     @relation("DepartmentHierarchy")
+  status             DepartmentStatus @default(ACTIVE)
+  users              User[]
+  assets             Asset[]
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  createdBy String?
+  updatedBy String?
+  deletedAt DateTime?
+  version   Int       @default(1)
+}
+
+enum DepartmentStatus {
+  ACTIVE
+  INACTIVE
+}
+
+model Session {
+  id     String @id @default(uuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  refreshTokenHash String @unique
+  tokenFamily      String @default(uuid())
+
+  status SessionStatus @default(ACTIVE)
+
+  refreshCounter Int       @default(0)
+  lastRefreshAt  DateTime?
+
+  deviceId  String?
+  userAgent String?
+  ipAddress String?
+
+  lastActiveAt DateTime @default(now())
+  expiresAt    DateTime
+
+  revokedAt    DateTime?
+  revokeReason String?
+  revokedBy    RevokedBy?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  version   Int      @default(1)
+
+  @@index([userId])
+  @@index([tokenFamily])
+  @@index([expiresAt])
+  @@index([status])
+}
+
+enum SessionStatus {
+  ACTIVE
+  EXPIRED
+  REVOKED
+  COMPROMISED
+  ARCHIVED
+}
+
+enum RevokedBy {
+  USER
+  ADMIN
+  SYSTEM
+  SECURITY_ENGINE
+}
+
+model LoginAttempt {
+  id          String   @id @default(uuid())
+  email       String
+  ipAddress   String
+  success     Boolean
+  attemptTime DateTime @default(now())
+}
+
+model AssetCategory {
+  id          String  @id @default(uuid())
+  name        String  @unique
+  description String?
+
+  assets Asset[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Asset {
+  id           String  @id @default(uuid())
+  assetTag     String  @unique
+  serialNumber String? @unique
+  name         String
+  description  String?
+
+  categoryId String
+  category   AssetCategory @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+
+  departmentId String
+  department   Department @relation(fields: [departmentId], references: [id], onDelete: Restrict)
+
+  assignedUserId String?
+  assignedUser   User?   @relation(fields: [assignedUserId], references: [id], onDelete: SetNull)
+
+  status AssetStatus @default(AVAILABLE)
+
+  allocations AssetAllocation[]
+  bookings    ResourceBooking[]
+  maintenance MaintenanceRequest[]
+
+  purchaseDate DateTime?
+  purchaseCost Float?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum AssetStatus {
+  AVAILABLE
+  ASSIGNED
+  IN_MAINTENANCE
+  RETIRED
+  LOST
+}
+
+model AssetAllocation {
+  id      String @id @default(uuid())
+  assetId String
+  asset   Asset  @relation(fields: [assetId], references: [id], onDelete: Restrict)
+
+  allocatedToId String
+  allocatedTo   User   @relation("AllocatedTo", fields: [allocatedToId], references: [id], onDelete: Restrict)
+
+  allocatedById String
+  allocatedBy   User   @relation("AllocatedBy", fields: [allocatedById], references: [id], onDelete: Restrict)
+
+  allocatedAt DateTime @default(now())
+
+  returnedAt   DateTime?
+  returnedById String?
+  returnedBy   User?     @relation("ReturnedBy", fields: [returnedById], references: [id], onDelete: Restrict)
+
+  status AllocationStatus @default(ACTIVE)
+  notes  String?
+}
+
+enum AllocationStatus {
+  ACTIVE
+  RETURNED
+}
+
+model AuditLog {
+  id         String   @id @default(uuid())
+  entityType String
+  entityId   String
+  action     String
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Restrict)
+  details    Json?
+  createdAt  DateTime @default(now())
+}
+
+model ResourceBooking {
+  id String @id @default(uuid())
+
+  assetId String
+  asset   Asset  @relation(fields: [assetId], references: [id], onDelete: Restrict)
+
+  bookedById String
+  bookedBy   User   @relation("BookedBy", fields: [bookedById], references: [id], onDelete: Restrict)
+
+  approvedById String?
+  approvedBy   User?   @relation("ApprovedBy", fields: [approvedById], references: [id], onDelete: Restrict)
+
+  startTime DateTime
+  endTime   DateTime
+
+  status BookingStatus @default(PENDING)
+  notes  String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum BookingStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
+  COMPLETED
+}
+
+model MaintenanceRequest {
+  id String @id @default(uuid())
+
+  assetId String
+  asset   Asset  @relation(fields: [assetId], references: [id], onDelete: Restrict)
+
+  reportedById String
+  reportedBy   User   @relation("ReportedBy", fields: [reportedById], references: [id], onDelete: Restrict)
+
+  technicianId String?
+  technician   User?   @relation("Technician", fields: [technicianId], references: [id], onDelete: Restrict)
+
+  issue      String
+  resolution String?
+  cost       Float?
+
+  status MaintenanceStatus @default(PENDING)
+
+  scheduledStart DateTime?
+  scheduledEnd   DateTime?
+  completedAt    DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum MaintenanceStatus {
+  PENDING
+  SCHEDULED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}

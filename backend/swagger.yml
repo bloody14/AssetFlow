@@ -1,0 +1,43 @@
+openapi: 3.0.0
+info:
+  title: AssetFlow API
+  version: 1.0.0
+  description: API for managing assets, allocations, bookings, and maintenance.
+servers:
+  - url: http://localhost:3000/api/v1
+paths:
+  /auth/login:
+    post:
+      summary: Login user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                password:
+                  type: string
+      responses:
+        '200':
+          description: Successful login
+  /assets:
+    get:
+      summary: Retrieve all assets
+      responses:
+        '200':
+          description: A list of assets
+  /health:
+    get:
+      summary: Health check
+      responses:
+        '200':
+          description: API is running
+components:
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: accessToken
