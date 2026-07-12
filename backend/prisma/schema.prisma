@@ -19,6 +19,11 @@ model User {
   sessions Session[]
   assets   Asset[]
 
+  allocationsTo AssetAllocation[] @relation("AllocatedTo")
+  allocationsBy AssetAllocation[] @relation("AllocatedBy")
+  returnsBy     AssetAllocation[] @relation("ReturnedBy")
+  auditLogs     AuditLog[]
+
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   createdBy String?
@@ -148,6 +153,8 @@ model Asset {
 
   status AssetStatus @default(AVAILABLE)
 
+  allocations AssetAllocation[]
+
   purchaseDate DateTime?
   purchaseCost Float?
 
@@ -161,4 +168,41 @@ enum AssetStatus {
   IN_MAINTENANCE
   RETIRED
   LOST
+}
+
+model AssetAllocation {
+  id      String @id @default(uuid())
+  assetId String
+  asset   Asset  @relation(fields: [assetId], references: [id], onDelete: Restrict)
+
+  allocatedToId String
+  allocatedTo   User   @relation("AllocatedTo", fields: [allocatedToId], references: [id], onDelete: Restrict)
+
+  allocatedById String
+  allocatedBy   User   @relation("AllocatedBy", fields: [allocatedById], references: [id], onDelete: Restrict)
+
+  allocatedAt DateTime @default(now())
+
+  returnedAt   DateTime?
+  returnedById String?
+  returnedBy   User?     @relation("ReturnedBy", fields: [returnedById], references: [id], onDelete: Restrict)
+
+  status AllocationStatus @default(ACTIVE)
+  notes  String?
+}
+
+enum AllocationStatus {
+  ACTIVE
+  RETURNED
+}
+
+model AuditLog {
+  id         String   @id @default(uuid())
+  entityType String
+  entityId   String
+  action     String
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Restrict)
+  details    Json?
+  createdAt  DateTime @default(now())
 }
