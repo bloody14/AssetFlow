@@ -1,8 +1,4 @@
-export interface IUserPayload {
-  id: string;
-  role: string;
-  sessionId: string;
-}
+import { IUserPayload } from '../auth';
 
 declare global {
   namespace Express {

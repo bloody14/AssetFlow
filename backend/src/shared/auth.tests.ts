@@ -10,12 +10,12 @@ test('Password Utility', async (t) => {
   await t.test('should hash and verify password correctly', async () => {
     const password = 'StrongPassword123!';
     const hash = await hashPassword(password);
-    
+
     assert.notStrictEqual(password, hash);
-    
+
     const isValid = await comparePassword(password, hash);
     assert.strictEqual(isValid, true);
-    
+
     const isInvalid = await comparePassword('WrongPassword!', hash);
     assert.strictEqual(isInvalid, false);
   });
@@ -68,7 +68,7 @@ test('Refresh Token Utility', async (t) => {
   await t.test('should verify refresh token correctly (timing safe)', () => {
     const plainToken = generateRefreshToken();
     const hashed = hashRefreshToken(plainToken);
-    
+
     const isValid = verifyRefreshToken(plainToken, hashed);
     assert.strictEqual(isValid, true);
 

@@ -1,12 +1,16 @@
 import { PrismaClient, SessionStatus, RevokedBy } from '@prisma/client';
 import { IAuthRepository } from './auth.repository.interface';
-import { CreateSessionDTO, SessionDomain, DomainSessionStatus, DomainRevokedBy } from '../types/auth.types';
+import {
+  CreateSessionDTO,
+  SessionDomain,
+  DomainSessionStatus,
+  DomainRevokedBy,
+} from '../types/auth.types';
 
 const prisma = new PrismaClient();
 
 export class PrismaAuthRepository implements IAuthRepository {
-  
-  private mapToDomain(session: any): SessionDomain {
+  private mapToDomain(session: import('@prisma/client').Session): SessionDomain {
     return {
       ...session,
       status: session.status as unknown as DomainSessionStatus,
@@ -23,7 +27,7 @@ export class PrismaAuthRepository implements IAuthRepository {
         ipAddress: data.ipAddress,
         userAgent: data.userAgent,
         deviceId: data.deviceId,
-      }
+      },
     });
     return this.mapToDomain(session);
   }
@@ -38,7 +42,11 @@ export class PrismaAuthRepository implements IAuthRepository {
     return session ? this.mapToDomain(session) : null;
   }
 
-  async revokeSession(sessionId: string, reason: string, revokedBy: DomainRevokedBy): Promise<boolean> {
+  async revokeSession(
+    sessionId: string,
+    reason: string,
+    revokedBy: DomainRevokedBy
+  ): Promise<boolean> {
     const result = await prisma.session.updateMany({
       where: { id: sessionId, status: SessionStatus.ACTIVE },
       data: {
@@ -46,28 +54,38 @@ export class PrismaAuthRepository implements IAuthRepository {
         revokedAt: new Date(),
         revokeReason: reason,
         revokedBy: revokedBy as unknown as RevokedBy,
-      }
+      },
     });
     return result.count > 0;
   }
 
-  async revokeTokenFamily(tokenFamily: string, reason: string, revokedBy: DomainRevokedBy): Promise<number> {
+  async revokeTokenFamily(
+    tokenFamily: string,
+    reason: string,
+    revokedBy: DomainRevokedBy
+  ): Promise<number> {
     const result = await prisma.session.updateMany({
-      where: { 
-        tokenFamily, 
-        status: { notIn: [SessionStatus.REVOKED, SessionStatus.COMPROMISED, SessionStatus.ARCHIVED] } 
+      where: {
+        tokenFamily,
+        status: {
+          notIn: [SessionStatus.REVOKED, SessionStatus.COMPROMISED, SessionStatus.ARCHIVED],
+        },
       },
       data: {
         status: SessionStatus.COMPROMISED,
         revokedAt: new Date(),
         revokeReason: reason,
         revokedBy: revokedBy as unknown as RevokedBy,
-      }
+      },
     });
     return result.count;
   }
 
-  async revokeAllUserSessions(userId: string, reason: string, revokedBy: DomainRevokedBy): Promise<number> {
+  async revokeAllUserSessions(
+    userId: string,
+    reason: string,
+    revokedBy: DomainRevokedBy
+  ): Promise<number> {
     const result = await prisma.session.updateMany({
       where: { userId, status: SessionStatus.ACTIVE },
       data: {
@@ -75,7 +93,7 @@ export class PrismaAuthRepository implements IAuthRepository {
         revokedAt: new Date(),
         revokeReason: reason,
         revokedBy: revokedBy as unknown as RevokedBy,
-      }
+      },
     });
     return result.count;
   }
@@ -83,11 +101,16 @@ export class PrismaAuthRepository implements IAuthRepository {
   async updateLastActivity(sessionId: string): Promise<void> {
     await prisma.session.updateMany({
       where: { id: sessionId, status: SessionStatus.ACTIVE },
-      data: { lastActiveAt: new Date() }
+      data: { lastActiveAt: new Date() },
     });
   }
 
-  async rotateRefreshToken(sessionId: string, newHash: string, newExpiresAt: Date, currentVersion: number): Promise<SessionDomain> {
+  async rotateRefreshToken(
+    sessionId: string,
+    newHash: string,
+    newExpiresAt: Date,
+    currentVersion: number
+  ): Promise<SessionDomain> {
     try {
       const session = await prisma.session.update({
         where: { id: sessionId, version: currentVersion, status: SessionStatus.ACTIVE },
@@ -96,13 +119,20 @@ export class PrismaAuthRepository implements IAuthRepository {
           expiresAt: newExpiresAt,
           refreshCounter: { increment: 1 },
           lastRefreshAt: new Date(),
-          version: { increment: 1 }
-        }
+          version: { increment: 1 },
+        },
       });
       return this.mapToDomain(session);
-    } catch (error: any) {
-      if (error.code === 'P2025') {
-        throw new Error('Optimistic concurrency failure: Session not found, inactive, or version mismatch');
+    } catch (error: unknown) {
+      if (
+        typeof error === 'object' &&
+        error !== null &&
+        'code' in error &&
+        (error as { code: string }).code === 'P2025'
+      ) {
+        throw new Error(
+          'Optimistic concurrency failure: Session not found, inactive, or version mismatch'
+        );
       }
       throw error;
     }
@@ -110,11 +140,11 @@ export class PrismaAuthRepository implements IAuthRepository {
 
   async cleanupExpiredSessions(retentionDays: number): Promise<number> {
     const now = new Date();
-    
+
     // 1. Mark ACTIVE sessions as EXPIRED if past their expiration date
     await prisma.session.updateMany({
       where: { status: SessionStatus.ACTIVE, expiresAt: { lt: now } },
-      data: { status: SessionStatus.EXPIRED }
+      data: { status: SessionStatus.EXPIRED },
     });
 
     // 2. Archive sessions that have passed the retention window
@@ -122,13 +152,13 @@ export class PrismaAuthRepository implements IAuthRepository {
     cutoffDate.setDate(now.getDate() - retentionDays);
 
     const result = await prisma.session.updateMany({
-      where: { 
+      where: {
         status: { in: [SessionStatus.EXPIRED, SessionStatus.REVOKED, SessionStatus.COMPROMISED] },
-        updatedAt: { lt: cutoffDate }
+        updatedAt: { lt: cutoffDate },
       },
       data: {
-        status: SessionStatus.ARCHIVED
-      }
+        status: SessionStatus.ARCHIVED,
+      },
     });
 
     return result.count;
