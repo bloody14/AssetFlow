@@ -19,6 +19,9 @@ const app = (0, express_1.default)();
 app.use(express_1.default.json());
 app.use((0, cookie_parser_1.default)());
 app.use('/api/v1/auth', auth_routes_1.default);
+app.get('/health', (_req, res) => {
+    res.status(200).json({ status: 'success', message: 'AssetFlow API is running' });
+});
 app.use('/api/v1/departments', department_routes_1.default);
 app.use('/api/v1/employees', employee_routes_1.default);
 app.use('/api/v1/asset-categories', assetCategory_routes_1.default);

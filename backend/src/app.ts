@@ -17,6 +17,11 @@ app.use(express.json());
 app.use(cookieParser());
 
 app.use('/api/v1/auth', authRoutes);
+
+app.get('/health', (_req, res) => {
+  res.status(200).json({ status: 'success', message: 'AssetFlow API is running' });
+});
+
 app.use('/api/v1/departments', departmentRoutes);
 app.use('/api/v1/employees', employeeRoutes);
 app.use('/api/v1/asset-categories', assetCategoryRoutes);
