@@ -1,7 +1,5 @@
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../../../config/prisma';
 import { IUserRepository, UserDomain } from './user.repository.interface';
-
-const prisma = new PrismaClient();
 
 export class PrismaUserRepository implements IUserRepository {
   private mapToDomain(user: import('@prisma/client').User): UserDomain {

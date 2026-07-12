@@ -6,8 +6,7 @@ import {
   DomainSessionStatus,
   DomainRevokedBy,
 } from '../types/auth.types';
-
-const prisma = new PrismaClient();
+import { prisma } from '../../../config/prisma';
 
 export class PrismaAuthRepository implements IAuthRepository {
   private mapToDomain(session: import('@prisma/client').Session): SessionDomain {
