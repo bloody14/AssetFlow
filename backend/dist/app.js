@@ -12,6 +12,7 @@ const assetCategory_routes_1 = __importDefault(require("./modules/assetCategory/
 const asset_routes_1 = __importDefault(require("./modules/asset/routes/asset.routes"));
 const assetAllocation_routes_1 = __importDefault(require("./modules/assetAllocation/routes/assetAllocation.routes"));
 const booking_routes_1 = __importDefault(require("./modules/booking/routes/booking.routes"));
+const maintenance_routes_1 = __importDefault(require("./modules/maintenance/routes/maintenance.routes"));
 const errorHandler_1 = require("./shared/errorHandler");
 const app = (0, express_1.default)();
 app.use(express_1.default.json());
@@ -23,5 +24,6 @@ app.use('/api/v1/asset-categories', assetCategory_routes_1.default);
 app.use('/api/v1/assets', asset_routes_1.default);
 app.use('/api/v1/asset-allocations', assetAllocation_routes_1.default);
 app.use('/api/v1/bookings', booking_routes_1.default);
+app.use('/api/v1/maintenance', maintenance_routes_1.default);
 app.use(errorHandler_1.errorHandler);
 exports.default = app;

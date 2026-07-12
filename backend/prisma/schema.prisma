@@ -27,6 +27,9 @@ model User {
   bookingsBooked   ResourceBooking[] @relation("BookedBy")
   bookingsApproved ResourceBooking[] @relation("ApprovedBy")
 
+  maintenanceReported MaintenanceRequest[] @relation("ReportedBy")
+  maintenanceAssigned MaintenanceRequest[] @relation("Technician")
+
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   createdBy String?
@@ -158,6 +161,7 @@ model Asset {
 
   allocations AssetAllocation[]
   bookings    ResourceBooking[]
+  maintenance MaintenanceRequest[]
 
   purchaseDate DateTime?
   purchaseCost Float?
@@ -239,4 +243,38 @@ enum BookingStatus {
   REJECTED
   CANCELLED
   COMPLETED
+}
+
+model MaintenanceRequest {
+  id String @id @default(uuid())
+
+  assetId String
+  asset   Asset  @relation(fields: [assetId], references: [id], onDelete: Restrict)
+
+  reportedById String
+  reportedBy   User   @relation("ReportedBy", fields: [reportedById], references: [id], onDelete: Restrict)
+
+  technicianId String?
+  technician   User?   @relation("Technician", fields: [technicianId], references: [id], onDelete: Restrict)
+
+  issue      String
+  resolution String?
+  cost       Float?
+
+  status MaintenanceStatus @default(PENDING)
+
+  scheduledStart DateTime?
+  scheduledEnd   DateTime?
+  completedAt    DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum MaintenanceStatus {
+  PENDING
+  SCHEDULED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
 }
