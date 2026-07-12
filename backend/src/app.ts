@@ -6,6 +6,7 @@ import employeeRoutes from './modules/employee/routes/employee.routes';
 import assetCategoryRoutes from './modules/assetCategory/routes/assetCategory.routes';
 import assetRoutes from './modules/asset/routes/asset.routes';
 import assetAllocationRoutes from './modules/assetAllocation/routes/assetAllocation.routes';
+import bookingRoutes from './modules/booking/routes/booking.routes';
 import { errorHandler } from './shared/errorHandler';
 
 const app = express();
@@ -19,6 +20,7 @@ app.use('/api/v1/employees', employeeRoutes);
 app.use('/api/v1/asset-categories', assetCategoryRoutes);
 app.use('/api/v1/assets', assetRoutes);
 app.use('/api/v1/asset-allocations', assetAllocationRoutes);
+app.use('/api/v1/bookings', bookingRoutes);
 
 app.use(errorHandler);
 
