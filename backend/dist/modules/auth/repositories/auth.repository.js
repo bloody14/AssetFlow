@@ -2,7 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.PrismaAuthRepository = void 0;
 const client_1 = require("@prisma/client");
-const prisma = new client_1.PrismaClient();
+const prisma_1 = require("../../../config/prisma");
 class PrismaAuthRepository {
     mapToDomain(session) {
         return {
@@ -12,7 +12,7 @@ class PrismaAuthRepository {
         };
     }
     async createSession(data) {
-        const session = await prisma.session.create({
+        const session = await prisma_1.prisma.session.create({
             data: {
                 userId: data.userId,
                 refreshTokenHash: data.refreshTokenHash,
@@ -25,15 +25,15 @@ class PrismaAuthRepository {
         return this.mapToDomain(session);
     }
     async findSessionById(sessionId) {
-        const session = await prisma.session.findUnique({ where: { id: sessionId } });
+        const session = await prisma_1.prisma.session.findUnique({ where: { id: sessionId } });
         return session ? this.mapToDomain(session) : null;
     }
     async findSessionByRefreshHash(hash) {
-        const session = await prisma.session.findUnique({ where: { refreshTokenHash: hash } });
+        const session = await prisma_1.prisma.session.findUnique({ where: { refreshTokenHash: hash } });
         return session ? this.mapToDomain(session) : null;
     }
     async revokeSession(sessionId, reason, revokedBy) {
-        const result = await prisma.session.updateMany({
+        const result = await prisma_1.prisma.session.updateMany({
             where: { id: sessionId, status: client_1.SessionStatus.ACTIVE },
             data: {
                 status: client_1.SessionStatus.REVOKED,
@@ -45,7 +45,7 @@ class PrismaAuthRepository {
         return result.count > 0;
     }
     async revokeTokenFamily(tokenFamily, reason, revokedBy) {
-        const result = await prisma.session.updateMany({
+        const result = await prisma_1.prisma.session.updateMany({
             where: {
                 tokenFamily,
                 status: {
@@ -62,7 +62,7 @@ class PrismaAuthRepository {
         return result.count;
     }
     async revokeAllUserSessions(userId, reason, revokedBy) {
-        const result = await prisma.session.updateMany({
+        const result = await prisma_1.prisma.session.updateMany({
             where: { userId, status: client_1.SessionStatus.ACTIVE },
             data: {
                 status: client_1.SessionStatus.REVOKED,
@@ -74,14 +74,14 @@ class PrismaAuthRepository {
         return result.count;
     }
     async updateLastActivity(sessionId) {
-        await prisma.session.updateMany({
+        await prisma_1.prisma.session.updateMany({
             where: { id: sessionId, status: client_1.SessionStatus.ACTIVE },
             data: { lastActiveAt: new Date() },
         });
     }
     async rotateRefreshToken(sessionId, newHash, newExpiresAt, currentVersion) {
         try {
-            const session = await prisma.session.update({
+            const session = await prisma_1.prisma.session.update({
                 where: { id: sessionId, version: currentVersion, status: client_1.SessionStatus.ACTIVE },
                 data: {
                     refreshTokenHash: newHash,
@@ -106,14 +106,14 @@ class PrismaAuthRepository {
     async cleanupExpiredSessions(retentionDays) {
         const now = new Date();
         // 1. Mark ACTIVE sessions as EXPIRED if past their expiration date
-        await prisma.session.updateMany({
+        await prisma_1.prisma.session.updateMany({
             where: { status: client_1.SessionStatus.ACTIVE, expiresAt: { lt: now } },
             data: { status: client_1.SessionStatus.EXPIRED },
         });
         // 2. Archive sessions that have passed the retention window
         const cutoffDate = new Date();
         cutoffDate.setDate(now.getDate() - retentionDays);
-        const result = await prisma.session.updateMany({
+        const result = await prisma_1.prisma.session.updateMany({
             where: {
                 status: { in: [client_1.SessionStatus.EXPIRED, client_1.SessionStatus.REVOKED, client_1.SessionStatus.COMPROMISED] },
                 updatedAt: { lt: cutoffDate },

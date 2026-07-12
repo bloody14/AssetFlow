@@ -1,4 +1,4 @@
-import { PrismaClient, SessionStatus, RevokedBy } from '@prisma/client';
+import { SessionStatus, RevokedBy } from '@prisma/client';
 import { IAuthRepository } from './auth.repository.interface';
 import {
   CreateSessionDTO,

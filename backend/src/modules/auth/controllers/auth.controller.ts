@@ -1,5 +1,4 @@
 import { Request, Response } from 'express';
-import { z } from 'zod';
 import { IAuthService } from '../services/auth.service.interface';
 import { sendSuccess } from '../../../shared/response';
 import { HTTP_STATUS } from '../../../constants/httpStatus';

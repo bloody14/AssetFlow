@@ -1,34 +1,24 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AuthController = void 0;
-const zod_1 = require("zod");
 const response_1 = require("../../../shared/response");
 const httpStatus_1 = require("../../../constants/httpStatus");
 const cookie_1 = require("../../../shared/cookie");
 const auth_1 = require("../../../constants/auth");
 const auth_middleware_1 = require("../middlewares/auth.middleware");
 const appError_1 = require("../../../shared/appError");
-const loginSchema = zod_1.z.object({
-    email: zod_1.z.string().email(),
-    password: zod_1.z.string().min(1),
-});
 class AuthController {
     authService;
     constructor(authService) {
         this.authService = authService;
     }
     login = async (req, res) => {
-        // 1. Validate Request
-        const validatedBody = loginSchema.safeParse(req.body);
-        if (!validatedBody.success) {
-            throw new appError_1.AppError('Invalid request data', httpStatus_1.HTTP_STATUS.BAD_REQUEST, 'VALIDATION_ERROR');
-        }
         const ipAddress = req.ip || req.connection?.remoteAddress || 'unknown';
         const userAgent = req.headers['user-agent'] || 'unknown';
         // 2. Call Service
         const tokens = await this.authService.login({
-            email: validatedBody.data.email,
-            password: validatedBody.data.password,
+            email: req.body.email,
+            password: req.body.password,
             ipAddress,
             userAgent,
         });

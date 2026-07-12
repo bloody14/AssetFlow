@@ -1,0 +1,23 @@
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = __importDefault(require("express"));
+const cookie_parser_1 = __importDefault(require("cookie-parser"));
+const auth_routes_1 = __importDefault(require("./modules/auth/routes/auth.routes"));
+const department_routes_1 = __importDefault(require("./modules/department/routes/department.routes"));
+const employee_routes_1 = __importDefault(require("./modules/employee/routes/employee.routes"));
+const assetCategory_routes_1 = __importDefault(require("./modules/assetCategory/routes/assetCategory.routes"));
+const asset_routes_1 = __importDefault(require("./modules/asset/routes/asset.routes"));
+const errorHandler_1 = require("./shared/errorHandler");
+const app = (0, express_1.default)();
+app.use(express_1.default.json());
+app.use((0, cookie_parser_1.default)());
+app.use('/api/v1/auth', auth_routes_1.default);
+app.use('/api/v1/departments', department_routes_1.default);
+app.use('/api/v1/employees', employee_routes_1.default);
+app.use('/api/v1/asset-categories', assetCategory_routes_1.default);
+app.use('/api/v1/assets', asset_routes_1.default);
+app.use(errorHandler_1.errorHandler);
+exports.default = app;

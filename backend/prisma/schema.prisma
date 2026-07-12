@@ -7,23 +7,24 @@ datasource db {
 }
 
 model User {
-  id             String    @id @default(uuid())
-  name           String
-  email          String    @unique
-  passwordHash   String
-  role           Role      @default(EMPLOYEE)
-  departmentId   String?
-  department     Department? @relation(fields: [departmentId], references: [id], onDelete: SetNull)
-  status         UserStatus @default(ACTIVE)
-  
-  sessions       Session[]
-  
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
-  createdBy      String?
-  updatedBy      String?
-  deletedAt      DateTime?
-  version        Int       @default(1)
+  id           String      @id @default(uuid())
+  name         String
+  email        String      @unique
+  passwordHash String
+  role         Role        @default(EMPLOYEE)
+  departmentId String?
+  department   Department? @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  status       UserStatus  @default(ACTIVE)
+
+  sessions Session[]
+  assets   Asset[]
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  createdBy String?
+  updatedBy String?
+  deletedAt DateTime?
+  version   Int       @default(1)
 }
 
 enum Role {
@@ -39,20 +40,21 @@ enum UserStatus {
 }
 
 model Department {
-  id                 String       @id @default(uuid())
-  name               String       @unique
+  id                 String           @id @default(uuid())
+  name               String           @unique
   parentDepartmentId String?
-  parentDepartment   Department?  @relation("DepartmentHierarchy", fields: [parentDepartmentId], references: [id], onDelete: Restrict)
-  subDepartments     Department[] @relation("DepartmentHierarchy")
+  parentDepartment   Department?      @relation("DepartmentHierarchy", fields: [parentDepartmentId], references: [id], onDelete: Restrict)
+  subDepartments     Department[]     @relation("DepartmentHierarchy")
   status             DepartmentStatus @default(ACTIVE)
   users              User[]
-  
-  createdAt          DateTime  @default(now())
-  updatedAt          DateTime  @updatedAt
-  createdBy          String?
-  updatedBy          String?
-  deletedAt          DateTime?
-  version            Int       @default(1)
+  assets             Asset[]
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  createdBy String?
+  updatedBy String?
+  deletedAt DateTime?
+  version   Int       @default(1)
 }
 
 enum DepartmentStatus {
@@ -61,32 +63,32 @@ enum DepartmentStatus {
 }
 
 model Session {
-  id               String    @id @default(uuid())
-  userId           String
-  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
-  refreshTokenHash String    @unique
-  tokenFamily      String    @default(uuid())
-  
-  status           SessionStatus @default(ACTIVE)
-  
-  refreshCounter   Int       @default(0)
-  lastRefreshAt    DateTime?
-  
-  deviceId         String?
-  userAgent        String?
-  ipAddress        String?
-  
-  lastActiveAt     DateTime  @default(now())
-  expiresAt        DateTime
-  
-  revokedAt        DateTime?
-  revokeReason     String?
-  revokedBy        RevokedBy?
-  
-  createdAt        DateTime  @default(now())
-  updatedAt        DateTime  @updatedAt
-  version          Int       @default(1)
+  id     String @id @default(uuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  refreshTokenHash String @unique
+  tokenFamily      String @default(uuid())
+
+  status SessionStatus @default(ACTIVE)
+
+  refreshCounter Int       @default(0)
+  lastRefreshAt  DateTime?
+
+  deviceId  String?
+  userAgent String?
+  ipAddress String?
+
+  lastActiveAt DateTime @default(now())
+  expiresAt    DateTime
+
+  revokedAt    DateTime?
+  revokeReason String?
+  revokedBy    RevokedBy?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  version   Int      @default(1)
 
   @@index([userId])
   @@index([tokenFamily])
@@ -115,4 +117,48 @@ model LoginAttempt {
   ipAddress   String
   success     Boolean
   attemptTime DateTime @default(now())
+}
+
+model AssetCategory {
+  id          String  @id @default(uuid())
+  name        String  @unique
+  description String?
+
+  assets Asset[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Asset {
+  id           String  @id @default(uuid())
+  assetTag     String  @unique
+  serialNumber String? @unique
+  name         String
+  description  String?
+
+  categoryId String
+  category   AssetCategory @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+
+  departmentId String
+  department   Department @relation(fields: [departmentId], references: [id], onDelete: Restrict)
+
+  assignedUserId String?
+  assignedUser   User?   @relation(fields: [assignedUserId], references: [id], onDelete: SetNull)
+
+  status AssetStatus @default(AVAILABLE)
+
+  purchaseDate DateTime?
+  purchaseCost Float?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum AssetStatus {
+  AVAILABLE
+  ASSIGNED
+  IN_MAINTENANCE
+  RETIRED
+  LOST
 }
