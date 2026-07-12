@@ -1,75 +1,51 @@
-# React + TypeScript + Vite
+# AssetFlow 🏢
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+An enterprise-grade asset management, allocation, booking, and maintenance system built with React, Node.js, Express, and Prisma.
 
-Currently, two official plugins are available:
+## Current Project Status & Missing Files 🚨
+**Important Note:** The **Backend** is 100% complete, fully verified, and production-ready inside the `/backend` directory. However, the **Frontend source files are currently missing**. The `/src` directory at the root is completely empty. There are no React components, pages, or routing files yet.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+To proceed with frontend development, you will need to populate the `/src` folder with your React application (e.g., `main.tsx`, `App.tsx`, components).
 
-## React Compiler
+## Integration Setup 🔗
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+To prepare for when the frontend files are added, the integration architecture has already been set up:
 
-## Expanding the ESLint configuration
+1. **Backend CORS**: The backend is configured to accept requests from the Vite frontend at `http://localhost:5173` with credentials enabled (for JWT cookies).
+2. **Frontend Proxy**: The `vite.config.ts` is configured to proxy all requests starting with `/api/v1` to the backend server at `http://localhost:3000`. This avoids CORS issues during local development.
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-
+When writing frontend code, you can fetch data directly via relative paths:
+```typescript
+// Example: This will automatically proxy to http://localhost:3000/api/v1/auth/login
+const response = await fetch('/api/v1/auth/login', {
+  method: 'POST',
+  // ...
+});
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## Running the Application 🚀
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-
+### 1. Start the Backend
+```bash
+cd backend
+npm install
+# Set up .env with DATABASE_URL and JWT_SECRET
+npx prisma generate
+npx prisma migrate dev
+npm run build
+npm start
 ```
+
+### 2. Start the Frontend
+```bash
+# From the root directory
+npm install
+npm run dev
+```
+
+## Docker Deployment 🐳
+The backend is fully dockerized. Navigate to the `/backend` directory and run:
+```bash
+docker-compose up --build -d
+```
+This will spin up the Node server and the PostgreSQL database simultaneously.

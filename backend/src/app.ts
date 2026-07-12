@@ -11,7 +11,15 @@ import maintenanceRoutes from './modules/maintenance/routes/maintenance.routes';
 import reportingRoutes from './modules/reporting/routes/reporting.routes';
 import { errorHandler } from './shared/errorHandler';
 
+import cors from 'cors';
+
 const app = express();
+
+// Configure CORS for the frontend Vite server
+app.use(cors({
+  origin: 'http://localhost:5173', // Vite default port
+  credentials: true
+}));
 
 app.use(express.json());
 app.use(cookieParser());
