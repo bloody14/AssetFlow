@@ -6,6 +6,7 @@ export interface AllocateAssetDTO {
 
 export interface ReturnAssetDTO {
   assetId: string;
+  condition: 'EXCELLENT' | 'GOOD' | 'FAIR' | 'DAMAGED' | 'BROKEN';
   notes?: string;
 }
 
@@ -23,6 +24,7 @@ export interface AssetAllocationDomain {
   allocatedAt: Date;
   returnedAt: Date | null;
   returnedById: string | null;
+  returnCondition: string | null;
   status: 'ACTIVE' | 'RETURNED';
   notes: string | null;
 }

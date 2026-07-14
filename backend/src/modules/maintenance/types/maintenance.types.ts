@@ -1,6 +1,7 @@
 export interface CreateMaintenanceDTO {
   assetId: string;
   issue: string;
+  attachments?: Record<string, unknown> | null;
 }
 
 export interface AssignTechnicianDTO {
@@ -16,6 +17,8 @@ export interface UpdateMaintenanceStatusDTO {
 export interface CompleteMaintenanceDTO {
   resolution: string;
   cost?: number;
+  condition?: 'EXCELLENT' | 'GOOD' | 'FAIR' | 'DAMAGED' | 'BROKEN';
+  attachments?: Record<string, unknown> | null;
 }
 
 export interface MaintenanceDomain {
@@ -30,6 +33,7 @@ export interface MaintenanceDomain {
   scheduledStart: Date | null;
   scheduledEnd: Date | null;
   completedAt: Date | null;
+  attachments: Record<string, unknown> | null;
   createdAt: Date;
   updatedAt: Date;
 }

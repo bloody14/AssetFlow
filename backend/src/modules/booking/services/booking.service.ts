@@ -1,5 +1,6 @@
 import { PrismaBookingRepository } from '../repositories/booking.repository';
 import { CreateBookingDTO, BookingDomain } from '../types/booking.types';
+import { eventBus } from '../../../shared/events/eventBus';
 
 export class BookingService {
   constructor(private readonly repo: PrismaBookingRepository) {}
@@ -9,7 +10,9 @@ export class BookingService {
   }
 
   async approveBooking(id: string, approvedById: string, notes?: string): Promise<BookingDomain> {
-    return this.repo.updateBookingStatus(id, 'APPROVED', approvedById, notes);
+    const booking = await this.repo.updateBookingStatus(id, 'APPROVED', approvedById, notes);
+    eventBus.publish('BookingApproved', booking, approvedById);
+    return booking;
   }
 
   async rejectBooking(id: string, rejectedById: string, notes?: string): Promise<BookingDomain> {

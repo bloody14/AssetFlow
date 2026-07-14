@@ -5,6 +5,8 @@ import { HTTP_STATUS } from '../../../constants/httpStatus';
 import { PrismaAssetCategoryRepository } from '../../assetCategory/repositories/assetCategory.repository';
 import { PrismaDepartmentRepository } from '../../department/repositories/department.repository';
 import { PrismaUserRepository } from '../../user/repositories/user.repository';
+import { eventBus } from '../../../shared/events/eventBus';
+import { asyncLocalStorage } from '../../../shared/logger';
 
 export class AssetService {
   constructor(
@@ -38,7 +40,14 @@ export class AssetService {
       if (!user) throw new AppError('User not found', HTTP_STATUS.NOT_FOUND, 'USER_NOT_FOUND');
     }
 
-    return this.repo.create(data);
+    const context = asyncLocalStorage.getStore();
+    const actorId = context?.userId || 'SYSTEM';
+
+    const asset = await this.repo.createWithTimeline(data, actorId, actorId === 'SYSTEM' ? 'SYSTEM' : 'USER');
+    
+    eventBus.publish('AssetPurchased', asset, actorId);
+    
+    return asset;
   }
 
   async getAsset(id: string): Promise<AssetDomain> {

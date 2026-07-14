@@ -42,6 +42,17 @@ export class PrismaBookingRepository {
         );
       }
 
+      const activeAllocation = await tx.assetAllocation.findFirst({
+        where: { assetId: data.assetId, status: 'ACTIVE' },
+      });
+      if (activeAllocation) {
+        throw new AppError(
+          'Asset is currently allocated and cannot be booked',
+          HTTP_STATUS.CONFLICT,
+          'ASSET_ALLOCATED'
+        );
+      }
+
       const sTime = new Date(data.startTime);
       const eTime = new Date(data.endTime);
 
@@ -114,6 +125,18 @@ export class PrismaBookingRepository {
           details: { previousStatus: booking.status, newStatus: status, notes },
         },
       });
+
+      if (status === 'APPROVED') {
+        await tx.assetTimeline.create({
+          data: {
+            assetId: booking.assetId,
+            eventType: 'BOOKED',
+            actorId: actionUserId,
+            actorType: 'USER',
+            notes: `Booking approved for period ${booking.startTime.toISOString()} to ${booking.endTime.toISOString()}. ${notes || ''}`,
+          },
+        });
+      }
 
       return updated;
     });

@@ -159,16 +159,33 @@ model Asset {
   assignedUser   User?   @relation(fields: [assignedUserId], references: [id], onDelete: SetNull)
 
   status AssetStatus @default(AVAILABLE)
+  condition AssetCondition @default(EXCELLENT)
+  qrIdentity String? @unique
+
+  warrantyProvider String?
+  warrantyStart DateTime?
+  warrantyEnd DateTime?
+  warrantyStatus String?
 
   allocations AssetAllocation[]
   bookings    ResourceBooking[]
   maintenance MaintenanceRequest[]
+  timeline    AssetTimeline[]
 
   purchaseDate DateTime?
   purchaseCost Float?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  deletedAt DateTime?
+}
+
+enum AssetCondition {
+  EXCELLENT
+  GOOD
+  FAIR
+  DAMAGED
+  BROKEN
 }
 
 enum AssetStatus {
@@ -177,6 +194,20 @@ enum AssetStatus {
   IN_MAINTENANCE
   RETIRED
   LOST
+}
+
+model AssetTimeline {
+  id String @id @default(uuid())
+  assetId String
+  asset Asset @relation(fields: [assetId], references: [id], onDelete: Restrict)
+  eventType String
+  actorId String
+  actorType String
+  notes String?
+  timestamp DateTime @default(now())
+  deletedAt DateTime?
+
+  @@index([assetId])
 }
 
 model AssetAllocation {
@@ -197,7 +228,9 @@ model AssetAllocation {
   returnedBy   User?     @relation("ReturnedBy", fields: [returnedById], references: [id], onDelete: Restrict)
 
   status AllocationStatus @default(ACTIVE)
+  returnCondition AssetCondition?
   notes  String?
+  deletedAt DateTime?
 }
 
 enum AllocationStatus {
@@ -236,6 +269,7 @@ model ResourceBooking {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  deletedAt DateTime?
 }
 
 enum BookingStatus {
@@ -261,6 +295,7 @@ model MaintenanceRequest {
   issue      String
   resolution String?
   cost       Float?
+  attachments Json?
 
   status MaintenanceStatus @default(PENDING)
 
@@ -270,6 +305,7 @@ model MaintenanceRequest {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  deletedAt DateTime?
 }
 
 enum MaintenanceStatus {

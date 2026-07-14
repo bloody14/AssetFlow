@@ -20,6 +20,7 @@ export class PrismaAssetAllocationRepository {
       allocatedAt: allocation.allocatedAt,
       returnedAt: allocation.returnedAt,
       returnedById: allocation.returnedById,
+      returnCondition: allocation.returnCondition,
       status: allocation.status,
       notes: allocation.notes,
     };
@@ -62,6 +63,16 @@ export class PrismaAssetAllocationRepository {
         data: { status: 'ASSIGNED', assignedUserId: data.allocatedToId },
       });
 
+      await tx.assetTimeline.create({
+        data: {
+          assetId: data.assetId,
+          eventType: 'ALLOCATED',
+          actorId: allocatedById,
+          actorType: 'USER',
+          notes: data.notes || `Allocated to user ${data.allocatedToId}`,
+        },
+      });
+
       await tx.auditLog.create({
         data: {
           entityType: 'ASSET',
@@ -96,15 +107,32 @@ export class PrismaAssetAllocationRepository {
           status: 'RETURNED',
           returnedAt: new Date(),
           returnedById,
+          returnCondition: data.condition,
           notes: data.notes
             ? `${activeAllocation.notes || ''}\nReturn Notes: ${data.notes}`
             : activeAllocation.notes,
         },
       });
 
+      const nextStatus = ['DAMAGED', 'BROKEN'].includes(data.condition) ? 'IN_MAINTENANCE' : 'AVAILABLE';
+
       await tx.asset.update({
         where: { id: data.assetId },
-        data: { status: 'AVAILABLE', assignedUserId: null },
+        data: { 
+          status: nextStatus, 
+          condition: data.condition,
+          assignedUserId: null 
+        },
+      });
+
+      await tx.assetTimeline.create({
+        data: {
+          assetId: data.assetId,
+          eventType: 'RETURNED',
+          actorId: returnedById,
+          actorType: 'USER',
+          notes: `Asset returned in ${data.condition} condition. ${data.notes || ''}`,
+        },
       });
 
       await tx.auditLog.create({
@@ -144,6 +172,16 @@ export class PrismaAssetAllocationRepository {
           status: 'RETURNED',
           returnedAt: new Date(),
           returnedById: transferredById,
+        },
+      });
+
+      await tx.assetTimeline.create({
+        data: {
+          assetId: data.assetId,
+          eventType: 'TRANSFERRED',
+          actorId: transferredById,
+          actorType: 'USER',
+          notes: `Asset transferred from ${activeAllocation.allocatedToId} to ${data.newAllocatedToId}. ${data.notes || ''}`,
         },
       });
 

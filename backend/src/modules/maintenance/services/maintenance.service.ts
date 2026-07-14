@@ -5,6 +5,7 @@ import {
   CompleteMaintenanceDTO,
   MaintenanceDomain,
 } from '../types/maintenance.types';
+import { eventBus } from '../../../shared/events/eventBus';
 
 export class MaintenanceService {
   constructor(private readonly repo: PrismaMaintenanceRepository) {}
@@ -13,7 +14,9 @@ export class MaintenanceService {
     data: CreateMaintenanceDTO,
     reportedById: string
   ): Promise<MaintenanceDomain> {
-    return this.repo.createRequest(data, reportedById);
+    const request = await this.repo.createRequest(data, reportedById);
+    eventBus.publish('MaintenanceStarted', request, reportedById);
+    return request;
   }
 
   async assignTechnician(
@@ -37,7 +40,9 @@ export class MaintenanceService {
     data: CompleteMaintenanceDTO,
     actionUserId: string
   ): Promise<MaintenanceDomain> {
-    return this.repo.completeMaintenance(id, data, actionUserId);
+    const request = await this.repo.completeMaintenance(id, data, actionUserId);
+    eventBus.publish('MaintenanceCompleted', request, actionUserId);
+    return request;
   }
 
   async getHistory(assetId: string): Promise<MaintenanceDomain[]> {

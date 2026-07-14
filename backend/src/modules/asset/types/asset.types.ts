@@ -9,6 +9,11 @@ export interface CreateAssetDTO {
   status?: 'AVAILABLE' | 'ASSIGNED' | 'IN_MAINTENANCE' | 'RETIRED' | 'LOST';
   purchaseDate?: Date | null;
   purchaseCost?: number | null;
+  condition?: 'EXCELLENT' | 'GOOD' | 'FAIR' | 'DAMAGED' | 'BROKEN';
+  warrantyProvider?: string | null;
+  warrantyStart?: Date | null;
+  warrantyEnd?: Date | null;
+  warrantyStatus?: string | null;
 }
 
 export type UpdateAssetDTO = Partial<CreateAssetDTO>;
@@ -25,6 +30,12 @@ export interface AssetDomain {
   status: string;
   purchaseDate: Date | null;
   purchaseCost: number | null;
+  condition: string;
+  qrIdentity: string | null;
+  warrantyProvider: string | null;
+  warrantyStart: Date | null;
+  warrantyEnd: Date | null;
+  warrantyStatus: string | null;
   createdAt: Date;
   updatedAt: Date;
 }

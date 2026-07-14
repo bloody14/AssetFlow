@@ -13,6 +13,12 @@ export class PrismaAssetRepository {
       departmentId: asset.departmentId,
       assignedUserId: asset.assignedUserId,
       status: asset.status,
+      condition: asset.condition,
+      qrIdentity: asset.qrIdentity,
+      warrantyProvider: asset.warrantyProvider,
+      warrantyStart: asset.warrantyStart,
+      warrantyEnd: asset.warrantyEnd,
+      warrantyStatus: asset.warrantyStatus,
       purchaseDate: asset.purchaseDate,
       purchaseCost: asset.purchaseCost,
       createdAt: asset.createdAt,
@@ -27,6 +33,37 @@ export class PrismaAssetRepository {
         data: data as any,
       })
     );
+  }
+
+  async createWithTimeline(data: CreateAssetDTO, actorId: string, actorType: string = 'USER'): Promise<AssetDomain> {
+    const { randomUUID } = require('crypto');
+    const assetId = randomUUID();
+    const qrIdentity = `af-urn:asset:${assetId}`;
+
+    const asset = await prisma.$transaction(async (tx) => {
+      const created = await tx.asset.create({
+        data: {
+          id: assetId,
+          qrIdentity,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          ...(data as any),
+        },
+      });
+
+      await tx.assetTimeline.create({
+        data: {
+          assetId,
+          eventType: 'PURCHASED',
+          actorId,
+          actorType,
+          notes: 'Asset initial registration',
+        },
+      });
+
+      return created;
+    });
+
+    return this.mapToDomain(asset);
   }
 
   async findById(id: string): Promise<AssetDomain | null> {

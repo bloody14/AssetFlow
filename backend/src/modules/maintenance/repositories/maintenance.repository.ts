@@ -22,6 +22,7 @@ export class PrismaMaintenanceRepository {
       scheduledStart: maintenance.scheduledStart,
       scheduledEnd: maintenance.scheduledEnd,
       completedAt: maintenance.completedAt,
+      attachments: maintenance.attachments as Record<string, unknown> | null,
       createdAt: maintenance.createdAt,
       updatedAt: maintenance.updatedAt,
     };
@@ -56,6 +57,7 @@ export class PrismaMaintenanceRepository {
           assetId: data.assetId,
           reportedById,
           issue: data.issue,
+          attachments: data.attachments ? (data.attachments as any) : undefined,
           status: 'PENDING',
         },
       });
@@ -63,6 +65,16 @@ export class PrismaMaintenanceRepository {
       await tx.asset.update({
         where: { id: data.assetId },
         data: { status: 'IN_MAINTENANCE' },
+      });
+
+      await tx.assetTimeline.create({
+        data: {
+          assetId: data.assetId,
+          eventType: 'MAINTENANCE_STARTED',
+          actorId: reportedById,
+          actorType: 'USER',
+          notes: `Maintenance request created. Issue: ${data.issue}`,
+        },
       });
 
       await tx.auditLog.create({
@@ -189,13 +201,27 @@ export class PrismaMaintenanceRepository {
           status: 'COMPLETED',
           resolution: data.resolution,
           cost: data.cost,
+          attachments: data.attachments ? (data.attachments as any) : request.attachments,
           completedAt: new Date(),
         },
       });
 
       await tx.asset.update({
         where: { id: request.assetId },
-        data: { status: 'AVAILABLE' },
+        data: { 
+          status: 'AVAILABLE',
+          ...(data.condition ? { condition: data.condition } : {})
+        },
+      });
+
+      await tx.assetTimeline.create({
+        data: {
+          assetId: request.assetId,
+          eventType: 'MAINTENANCE_COMPLETED',
+          actorId: actionUserId,
+          actorType: 'USER',
+          notes: `Maintenance completed. Resolution: ${data.resolution}. Cost: ${data.cost || 0}`,
+        },
       });
 
       await tx.auditLog.create({
