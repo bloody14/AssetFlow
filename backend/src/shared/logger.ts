@@ -1,25 +1,39 @@
 import winston from 'winston';
-import { env } from '../config/env';
+import { AsyncLocalStorage } from 'async_hooks';
 
-const { combine, timestamp, printf, colorize, errors } = winston.format;
+export interface LogContext {
+  correlationId: string;
+  method?: string;
+  path?: string;
+  userId?: string;
+  module?: string;
+  operation?: string;
+}
 
-const logFormat = printf(({ level, message, timestamp: ts, stack, ...meta }) => {
-  return `${String(ts)} ${level}: ${String(stack || message)} ${
-    Object.keys(meta).length ? JSON.stringify(meta) : ''
-  }`;
+export const asyncLocalStorage = new AsyncLocalStorage<LogContext>();
+
+const formatContext = winston.format((info) => {
+  const context = asyncLocalStorage.getStore();
+  if (context) {
+    info.correlationId = context.correlationId;
+    if (context.method) info.method = context.method;
+    if (context.path) info.path = context.path;
+    if (context.userId) info.userId = context.userId;
+    if (context.module) info.module = context.module;
+    if (context.operation) info.operation = context.operation;
+  }
+  info.environment = process.env.NODE_ENV || 'development';
+  return info;
 });
 
 export const logger = winston.createLogger({
-  level: env.LOG_LEVEL,
-  format: combine(
-    timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
-    errors({ stack: true }),
+  level: process.env.LOG_LEVEL || 'info',
+  format: winston.format.combine(
+    winston.format.timestamp(),
+    formatContext(),
     winston.format.json()
   ),
-  defaultMeta: { service: 'assetflow-api' },
   transports: [
-    new winston.transports.Console({
-      format: combine(colorize(), timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }), logFormat),
-    }),
-  ],
+    new winston.transports.Console()
+  ]
 });

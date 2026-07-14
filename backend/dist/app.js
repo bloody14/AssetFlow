@@ -15,7 +15,13 @@ const booking_routes_1 = __importDefault(require("./modules/booking/routes/booki
 const maintenance_routes_1 = __importDefault(require("./modules/maintenance/routes/maintenance.routes"));
 const reporting_routes_1 = __importDefault(require("./modules/reporting/routes/reporting.routes"));
 const errorHandler_1 = require("./shared/errorHandler");
+const cors_1 = __importDefault(require("cors"));
 const app = (0, express_1.default)();
+// Configure CORS for the frontend Vite server
+app.use((0, cors_1.default)({
+    origin: 'http://localhost:5173', // Vite default port
+    credentials: true
+}));
 app.use(express_1.default.json());
 app.use((0, cookie_parser_1.default)());
 app.use('/api/v1/auth', auth_routes_1.default);

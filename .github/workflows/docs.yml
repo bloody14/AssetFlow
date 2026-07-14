@@ -1,0 +1,9 @@
+# Documentation placeholder for future documentation deployment pipeline
+# Will generate OpenAPI specs and push MkDocs to GitHub Pages.
+name: Documentation Deployment Pipeline (Future)
+on: []
+jobs:
+  stub:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "To be implemented in Epic 1"

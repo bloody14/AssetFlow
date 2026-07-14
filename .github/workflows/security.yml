@@ -1,0 +1,9 @@
+# Documentation placeholder for future security pipeline
+# Will execute SAST scanning, Snyk, and Secret scanning before merge.
+name: Security Audit Pipeline (Future)
+on: []
+jobs:
+  stub:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "To be implemented in Epic 1"

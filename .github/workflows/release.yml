@@ -1,0 +1,9 @@
+# Documentation placeholder for future release pipeline
+# Will handle semantic release, Docker build, and container registry push.
+name: Production Release Pipeline (Future)
+on: []
+jobs:
+  stub:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "To be implemented in Epic 1"
