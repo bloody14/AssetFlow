@@ -6,6 +6,10 @@ export const sendSuccess = (res: Response, message: string, data?: unknown) => {
   return res.status(HTTP_STATUS.OK).json({ success: true, message, data });
 };
 
+export const sendPaginatedSuccess = (res: Response, message: string, data: unknown, meta: { total: number, page: number, limit: number, totalPages: number }) => {
+  return res.status(HTTP_STATUS.OK).json({ success: true, message, data, meta });
+};
+
 export const sendCreated = (res: Response, message: string, data?: unknown) => {
   return res.status(HTTP_STATUS.CREATED).json({ success: true, message, data });
 };

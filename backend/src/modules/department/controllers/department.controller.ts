@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { DepartmentService } from '../services/department.service';
-import { sendSuccess } from '../../../shared/response';
+import { sendSuccess, sendPaginatedSuccess } from '../../../shared/response';
+import { paginationQuerySchema } from '../../../shared/pagination.validation';
 
 export class DepartmentController {
   constructor(private readonly service: DepartmentService) {}
@@ -10,9 +11,15 @@ export class DepartmentController {
     return sendSuccess(res, 'Department created successfully', dept);
   };
 
-  getAll = async (_req: Request, res: Response) => {
-    const depts = await this.service.getAllDepartments();
-    return sendSuccess(res, 'Departments retrieved successfully', depts);
+  getAll = async (req: Request, res: Response) => {
+    const { page, limit } = paginationQuerySchema.parse(req.query);
+    const { data, total } = await this.service.getAllDepartments(page, limit);
+    return sendPaginatedSuccess(res, 'Departments retrieved successfully', data, {
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit)
+    });
   };
 
   getById = async (req: Request, res: Response) => {

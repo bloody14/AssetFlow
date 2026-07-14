@@ -37,6 +37,17 @@ export class PrismaDepartmentRepository {
     return depts.map((d) => this.mapToDomain(d));
   }
 
+  async findAllPaginated(skip: number, take: number): Promise<{ data: DepartmentDomain[], total: number }> {
+    const [depts, total] = await Promise.all([
+      prisma.department.findMany({ skip, take }),
+      prisma.department.count()
+    ]);
+    return {
+      data: depts.map((d) => this.mapToDomain(d)),
+      total
+    };
+  }
+
   async update(id: string, data: UpdateDepartmentDTO): Promise<DepartmentDomain> {
     const dept = await prisma.department.update({ where: { id }, data });
     return this.mapToDomain(dept);

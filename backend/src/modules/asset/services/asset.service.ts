@@ -47,8 +47,9 @@ export class AssetService {
     return asset;
   }
 
-  async getAllAssets(): Promise<AssetDomain[]> {
-    return this.repo.findAll();
+  async getAllAssets(page: number = 1, limit: number = 20): Promise<{ data: AssetDomain[], total: number }> {
+    const skip = (page - 1) * limit;
+    return this.repo.findAllPaginated(skip, limit);
   }
 
   async updateAsset(id: string, data: UpdateAssetDTO): Promise<AssetDomain> {

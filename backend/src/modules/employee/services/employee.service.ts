@@ -39,12 +39,16 @@ export class EmployeeService {
     return userWithoutPassword;
   }
 
-  async getAllEmployees(): Promise<Omit<UserDomain, 'passwordHash'>[]> {
-    const users = await this.repo.findAll();
-    return users.map((user) => {
-      const { passwordHash: _passwordHash, ...userWithoutPassword } = user;
-      return userWithoutPassword;
-    });
+  async getAllEmployees(page: number = 1, limit: number = 20): Promise<{ data: Omit<UserDomain, 'passwordHash'>[], total: number }> {
+    const skip = (page - 1) * limit;
+    const { data: users, total } = await this.repo.findAllPaginated(skip, limit);
+    return {
+      data: users.map((user) => {
+        const { passwordHash: _passwordHash, ...userWithoutPassword } = user;
+        return userWithoutPassword;
+      }),
+      total
+    };
   }
 
   async updateEmployee(

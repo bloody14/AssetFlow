@@ -42,8 +42,9 @@ export class DepartmentService {
     return dept;
   }
 
-  async getAllDepartments(): Promise<DepartmentDomain[]> {
-    return this.repo.findAll();
+  async getAllDepartments(page: number = 1, limit: number = 20): Promise<{ data: DepartmentDomain[], total: number }> {
+    const skip = (page - 1) * limit;
+    return this.repo.findAllPaginated(skip, limit);
   }
 
   async updateDepartment(id: string, data: UpdateDepartmentDTO): Promise<DepartmentDomain> {

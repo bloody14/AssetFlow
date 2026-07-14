@@ -36,7 +36,10 @@ jobs:
       working-directory: ./backend
       run: npm audit --audit-level=high
 
-    # Epic 1: Testing implementation (Vitest) will be executed here
-    # - name: Run Tests
-    #   working-directory: ./backend
-    #   run: npm run test:coverage
+    - name: Run Tests
+      working-directory: ./backend
+      run: npm run test:coverage
+
+    - name: Verify Docker Build
+      working-directory: ./backend
+      run: docker build -t assetflow-backend:test .

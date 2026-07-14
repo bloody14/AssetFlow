@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { EmployeeService } from '../services/employee.service';
-import { sendSuccess } from '../../../shared/response';
+import { sendSuccess, sendPaginatedSuccess } from '../../../shared/response';
+import { paginationQuerySchema } from '../../../shared/pagination.validation';
 
 export class EmployeeController {
   constructor(private readonly service: EmployeeService) {}
@@ -10,9 +11,15 @@ export class EmployeeController {
     return sendSuccess(res, 'Employee created successfully', employee);
   };
 
-  getAll = async (_req: Request, res: Response) => {
-    const employees = await this.service.getAllEmployees();
-    return sendSuccess(res, 'Employees retrieved successfully', employees);
+  getAll = async (req: Request, res: Response) => {
+    const { page, limit } = paginationQuerySchema.parse(req.query);
+    const { data, total } = await this.service.getAllEmployees(page, limit);
+    return sendPaginatedSuccess(res, 'Employees retrieved successfully', data, {
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit)
+    });
   };
 
   getById = async (req: Request, res: Response) => {

@@ -49,6 +49,17 @@ export class PrismaAssetRepository {
     return assets.map((a) => this.mapToDomain(a));
   }
 
+  async findAllPaginated(skip: number, take: number): Promise<{ data: AssetDomain[], total: number }> {
+    const [assets, total] = await Promise.all([
+      prisma.asset.findMany({ skip, take }),
+      prisma.asset.count()
+    ]);
+    return {
+      data: assets.map((a) => this.mapToDomain(a)),
+      total
+    };
+  }
+
   async update(id: string, data: UpdateAssetDTO): Promise<AssetDomain> {
     return this.mapToDomain(
       await prisma.asset.update({

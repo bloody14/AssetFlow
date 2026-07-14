@@ -12,17 +12,42 @@ import maintenanceRoutes from './modules/maintenance/routes/maintenance.routes';
 import reportingRoutes from './modules/reporting/routes/reporting.routes';
 import { errorHandler } from './shared/errorHandler';
 import * as healthController from './controllers/health.controller';
+import { env } from './config/env';
 
 import cors from 'cors';
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
 
 const app = express();
 
+// Security: HTTP Headers via Helmet
+app.use(helmet());
+
+// Security: Global Rate Limiting
+const globalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // Limit each IP to 100 requests per `window` (here, per 15 minutes)
+  standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
+  legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+  message: {
+    success: false,
+    error: {
+      code: 'TOO_MANY_REQUESTS',
+      message: 'Too many requests from this IP, please try again after 15 minutes',
+    }
+  }
+});
+app.use(globalLimiter);
+
 // Inject Correlation ID and Request Logging
 app.use(correlationIdMiddleware);
-// Configure CORS for the frontend Vite server
+
+// Configure CORS for the authorized frontend
 app.use(cors({
-  origin: 'http://localhost:5173', // Vite default port
-  credentials: true
+  origin: env.CLIENT_URL,
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Correlation-ID']
 }));
 
 app.use(express.json());

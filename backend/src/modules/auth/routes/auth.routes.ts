@@ -7,8 +7,23 @@ import { authenticate } from '../middlewares/auth.middleware';
 import { validateRequest } from '../../../shared/validateRequest';
 import { loginSchema } from '../validations/auth.validation';
 import { asyncHandler } from '../../../shared/asyncHandler';
+import rateLimit from 'express-rate-limit';
 
 const router = Router();
+
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 5, // Limit each IP to 5 login requests per `window`
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    success: false,
+    error: {
+      code: 'TOO_MANY_REQUESTS',
+      message: 'Too many login attempts, please try again after 15 minutes',
+    }
+  }
+});
 
 // Manual Dependency Injection
 const userRepository = new PrismaUserRepository();
@@ -18,7 +33,7 @@ const authController = new AuthController(authService);
 const authMiddleware = authenticate(userRepository);
 
 // Routes mapped to /api/v1/auth (prefix applied in app.ts/server.ts)
-router.post('/login', validateRequest(loginSchema), asyncHandler(authController.login));
+router.post('/login', loginLimiter, validateRequest(loginSchema), asyncHandler(authController.login));
 router.post('/refresh', asyncHandler(authController.refreshToken));
 router.post('/logout', authMiddleware, asyncHandler(authController.logout));
 router.post('/logout-all', authMiddleware, asyncHandler(authController.logoutAll));
