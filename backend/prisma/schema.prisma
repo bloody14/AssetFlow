@@ -31,6 +31,11 @@ model User {
   maintenanceReported MaintenanceRequest[] @relation("ReportedBy")
   maintenanceAssigned MaintenanceRequest[] @relation("Technician")
 
+  managedWarehouses Warehouse[] @relation("WarehouseManager")
+  stockTransactions StockTransaction[] @relation("StockTransactions")
+  stockReservations StockReservation[] @relation("StockReservations")
+  cycleCounts       CycleCount[]       @relation("CycleCounts")
+
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   createdBy String?
@@ -314,4 +319,195 @@ enum MaintenanceStatus {
   IN_PROGRESS
   COMPLETED
   CANCELLED
+}
+
+// ------------------------------------------------------
+// Epic 3: Enterprise Inventory Platform
+// ------------------------------------------------------
+
+model Warehouse {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  location  String?
+  managerId String?
+  manager   User?    @relation("WarehouseManager", fields: [managerId], references: [id], onDelete: SetNull)
+  status    WarehouseStatus @default(ACTIVE)
+
+  stockLevels      StockLevel[]
+  stockTransactions StockTransaction[]
+  stockReservations StockReservation[]
+  cycleCounts       CycleCount[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deletedAt DateTime?
+}
+
+enum WarehouseStatus {
+  ACTIVE
+  INACTIVE
+}
+
+model InventoryCategory {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  description String?
+
+  items InventoryItem[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model InventoryItem {
+  id             String   @id @default(uuid())
+  sku            String   @unique
+  name           String
+  description    String?
+  categoryId     String
+  category       InventoryCategory @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  unitOfMeasure  UnitOfMeasure     @default(PCS)
+  reorderPoint   Int               @default(0)
+  reorderQuantity Int              @default(0)
+
+  stockLevels       StockLevel[]
+  stockTransactions StockTransaction[]
+  stockReservations StockReservation[]
+  cycleCountItems   CycleCountItem[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deletedAt DateTime?
+}
+
+enum UnitOfMeasure {
+  PCS
+  BOX
+  PACK
+  ROLL
+  KG
+  LITER
+  METER
+}
+
+model StockLevel {
+  inventoryItemId String
+  inventoryItem   InventoryItem @relation(fields: [inventoryItemId], references: [id], onDelete: Restrict)
+
+  warehouseId     String
+  warehouse       Warehouse     @relation(fields: [warehouseId], references: [id], onDelete: Restrict)
+
+  quantityAvailable Int @default(0)
+  quantityReserved  Int @default(0)
+
+  lastUpdated DateTime @default(now()) @updatedAt
+
+  @@id([inventoryItemId, warehouseId])
+}
+
+model StockTransaction {
+  id              String   @id @default(uuid())
+  inventoryItemId String
+  inventoryItem   InventoryItem @relation(fields: [inventoryItemId], references: [id], onDelete: Restrict)
+  warehouseId     String
+  warehouse       Warehouse     @relation(fields: [warehouseId], references: [id], onDelete: Restrict)
+  
+  type            TransactionType
+  quantity        Int
+  referenceId     String?
+  
+  actorId         String
+  actor           User   @relation("StockTransactions", fields: [actorId], references: [id], onDelete: Restrict)
+  
+  notes           String?
+  createdAt       DateTime @default(now())
+}
+
+enum TransactionType {
+  IN
+  OUT
+  ADJUSTMENT
+  TRANSFER
+}
+
+model StockReservation {
+  id              String   @id @default(uuid())
+  inventoryItemId String
+  inventoryItem   InventoryItem @relation(fields: [inventoryItemId], references: [id], onDelete: Restrict)
+  warehouseId     String
+  warehouse       Warehouse     @relation(fields: [warehouseId], references: [id], onDelete: Restrict)
+  
+  quantity        Int
+  status          ReservationStatus @default(PENDING)
+  referenceId     String?
+  notes           String?
+  
+  requestedById   String
+  requestedBy     User   @relation("StockReservations", fields: [requestedById], references: [id], onDelete: Restrict)
+  
+  expiresAt       DateTime?
+  fulfilledAt     DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+enum ReservationStatus {
+  PENDING
+  FULFILLED
+  CANCELLED
+  EXPIRED
+}
+
+model CycleCount {
+  id              String   @id @default(uuid())
+  warehouseId     String
+  warehouse       Warehouse @relation(fields: [warehouseId], references: [id], onDelete: Restrict)
+  
+  status          CycleCountStatus @default(PENDING)
+  notes           String?
+  
+  requestedById   String
+  requestedBy     User   @relation("CycleCounts", fields: [requestedById], references: [id], onDelete: Restrict)
+  
+  items           CycleCountItem[]
+  
+  completedAt     DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model CycleCountItem {
+  id              String   @id @default(uuid())
+  cycleCountId    String
+  cycleCount      CycleCount @relation(fields: [cycleCountId], references: [id], onDelete: Cascade)
+  
+  inventoryItemId String
+  inventoryItem   InventoryItem @relation(fields: [inventoryItemId], references: [id], onDelete: Restrict)
+  
+  expectedQuantity Int
+  countedQuantity  Int?
+  variance         Int?
+  
+  adjustmentReason AdjustmentReason?
+  notes            String?
+  
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@unique([cycleCountId, inventoryItemId])
+}
+
+enum CycleCountStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum AdjustmentReason {
+  SHRINKAGE
+  DAMAGE
+  OBSOLESCENCE
+  FOUND
+  OTHER
 }
