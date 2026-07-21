@@ -41,6 +41,7 @@ ENV NODE_ENV=production
 
 # Copy package files
 COPY package*.json ./
+COPY prisma ./prisma/
 
 # Install only production dependencies
 RUN npm ci --omit=dev
@@ -48,7 +49,6 @@ RUN npm ci --omit=dev
 # Copy built artifacts and Prisma client from builder
 COPY --from=builder /usr/src/app/dist ./dist
 COPY --from=builder /usr/src/app/node_modules/.prisma ./node_modules/.prisma
-COPY --from=builder /usr/src/app/prisma ./prisma
 
 # Add a non-root user and change ownership
 RUN addgroup -g 1001 -S nodejs && \
