@@ -41,7 +41,7 @@ jobs:
       env:
         CLIENT_URL: "http://localhost:3000"
         DATABASE_URL: "postgres://postgres:postgres@localhost:5432/assetflow_test"
-        JWT_SECRET: "test-secret-key-12345"
+        JWT_SECRET: "this-is-a-dummy-jwt-secret-that-is-at-least-64-bytes-long-for-testing-purposes-only"
       run: npm run test:coverage
 
     - name: Verify Docker Build
