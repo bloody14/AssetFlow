@@ -19,6 +19,6 @@ export const versionInfo = (_req: Request, res: Response) => {
     version: process.env.npm_package_version || '1.0.0',
     buildDate: process.env.BUILD_DATE || new Date().toISOString(),
     gitCommit: process.env.GIT_COMMIT || 'unknown',
-    environment: env.NODE_ENV
+    environment: env.NODE_ENV,
   });
 };

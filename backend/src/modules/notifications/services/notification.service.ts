@@ -18,15 +18,18 @@ export class NotificationService {
       status: 'SENT', // Immediately 'sent' in our mock
       metadata: data.metadata,
       createdAt: new Date(),
-      sentAt: new Date()
+      sentAt: new Date(),
     };
 
-    logger.info(`[MOCK DISPATCH: ${notification.type}] To: ${notification.recipientId} | Title: ${notification.title}`, {
-      module: 'Notifications',
-      operation: 'Dispatch',
-      notificationId: notification.id,
-      priority: notification.priority
-    });
+    logger.info(
+      `[MOCK DISPATCH: ${notification.type}] To: ${notification.recipientId} | Title: ${notification.title}`,
+      {
+        module: 'Notifications',
+        operation: 'Dispatch',
+        notificationId: notification.id,
+        priority: notification.priority,
+      }
+    );
 
     return notification;
   }

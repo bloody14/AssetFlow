@@ -5,7 +5,7 @@ import 'dotenv/config';
 
 const connectionString = process.env.DATABASE_URL;
 
-const pool = new Pool({ 
+const pool = new Pool({
   connectionString,
   max: 20, // Connection pool size limit
   idleTimeoutMillis: 30000, // Close idle clients after 30 seconds

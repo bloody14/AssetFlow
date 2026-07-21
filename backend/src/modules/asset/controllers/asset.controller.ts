@@ -14,7 +14,7 @@ export class AssetController {
       total,
       page,
       limit,
-      totalPages: Math.ceil(total / limit)
+      totalPages: Math.ceil(total / limit),
     });
   };
   getById = async (req: Request, res: Response) =>

@@ -23,7 +23,11 @@ const envSchema = z.object({
 const parsedEnv = envSchema.safeParse(process.env);
 
 if (!parsedEnv.success) {
-  logger.error('Invalid environment variables', { errors: parsedEnv.error.format(), module: 'System', operation: 'Startup' });
+  logger.error('Invalid environment variables', {
+    errors: parsedEnv.error.format(),
+    module: 'System',
+    operation: 'Startup',
+  });
   process.exit(1);
 }
 

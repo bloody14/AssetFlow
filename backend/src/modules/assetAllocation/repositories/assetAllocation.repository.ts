@@ -114,14 +114,16 @@ export class PrismaAssetAllocationRepository {
         },
       });
 
-      const nextStatus = ['DAMAGED', 'BROKEN'].includes(data.condition) ? 'IN_MAINTENANCE' : 'AVAILABLE';
+      const nextStatus = ['DAMAGED', 'BROKEN'].includes(data.condition)
+        ? 'IN_MAINTENANCE'
+        : 'AVAILABLE';
 
       await tx.asset.update({
         where: { id: data.assetId },
-        data: { 
-          status: nextStatus, 
+        data: {
+          status: nextStatus,
           condition: data.condition,
-          assignedUserId: null 
+          assignedUserId: null,
         },
       });
 

@@ -6,4 +6,4 @@ export const SYSTEM_ACTORS = {
   ANALYTICS: 'SYSTEM_ANALYTICS',
 } as const;
 
-export type SystemActor = typeof SYSTEM_ACTORS[keyof typeof SYSTEM_ACTORS];
+export type SystemActor = (typeof SYSTEM_ACTORS)[keyof typeof SYSTEM_ACTORS];

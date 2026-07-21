@@ -66,7 +66,9 @@ export class PrismaInventoryRepository {
   }
 
   // --- Category ---
-  private mapToCategoryDomain(c: import('@prisma/client').InventoryCategory): InventoryCategoryDomain {
+  private mapToCategoryDomain(
+    c: import('@prisma/client').InventoryCategory
+  ): InventoryCategoryDomain {
     return {
       id: c.id,
       name: c.name,
@@ -126,7 +128,10 @@ export class PrismaInventoryRepository {
     return this.mapToItemDomain(item);
   }
 
-  async updateInventoryItem(id: string, data: UpdateInventoryItemDTO): Promise<InventoryItemDomain> {
+  async updateInventoryItem(
+    id: string,
+    data: UpdateInventoryItemDTO
+  ): Promise<InventoryItemDomain> {
     const item = await prisma.inventoryItem.findUnique({ where: { id } });
     if (!item) {
       throw new AppError('Inventory item not found', HTTP_STATUS.NOT_FOUND, 'ITEM_NOT_FOUND');
@@ -163,7 +168,9 @@ export class PrismaInventoryRepository {
   }
 
   // --- Ledger / Transactions ---
-  private mapToTransactionDomain(t: import('@prisma/client').StockTransaction): StockTransactionDomain {
+  private mapToTransactionDomain(
+    t: import('@prisma/client').StockTransaction
+  ): StockTransactionDomain {
     return {
       id: t.id,
       inventoryItemId: t.inventoryItemId,
@@ -186,8 +193,8 @@ export class PrismaInventoryRepository {
             referenceId: data.referenceId,
             type: 'IN',
             inventoryItemId: data.inventoryItemId,
-            warehouseId: data.warehouseId
-          }
+            warehouseId: data.warehouseId,
+          },
         });
         if (existingTx) {
           return existingTx;
@@ -196,8 +203,17 @@ export class PrismaInventoryRepository {
 
       // Upsert stock level
       await tx.stockLevel.upsert({
-        where: { inventoryItemId_warehouseId: { inventoryItemId: data.inventoryItemId, warehouseId: data.warehouseId } },
-        create: { inventoryItemId: data.inventoryItemId, warehouseId: data.warehouseId, quantityAvailable: data.quantity },
+        where: {
+          inventoryItemId_warehouseId: {
+            inventoryItemId: data.inventoryItemId,
+            warehouseId: data.warehouseId,
+          },
+        },
+        create: {
+          inventoryItemId: data.inventoryItemId,
+          warehouseId: data.warehouseId,
+          quantityAvailable: data.quantity,
+        },
         update: { quantityAvailable: { increment: data.quantity } },
       });
 
@@ -221,15 +237,29 @@ export class PrismaInventoryRepository {
   async consumeStock(data: ConsumeStockDTO, actorId: string): Promise<StockTransactionDomain> {
     const result = await prisma.$transaction(async (tx) => {
       const stockLevel = await tx.stockLevel.findUnique({
-        where: { inventoryItemId_warehouseId: { inventoryItemId: data.inventoryItemId, warehouseId: data.warehouseId } },
+        where: {
+          inventoryItemId_warehouseId: {
+            inventoryItemId: data.inventoryItemId,
+            warehouseId: data.warehouseId,
+          },
+        },
       });
 
       if (!stockLevel || stockLevel.quantityAvailable < data.quantity) {
-        throw new AppError('Insufficient stock available', HTTP_STATUS.BAD_REQUEST, 'INSUFFICIENT_STOCK');
+        throw new AppError(
+          'Insufficient stock available',
+          HTTP_STATUS.BAD_REQUEST,
+          'INSUFFICIENT_STOCK'
+        );
       }
 
       await tx.stockLevel.update({
-        where: { inventoryItemId_warehouseId: { inventoryItemId: data.inventoryItemId, warehouseId: data.warehouseId } },
+        where: {
+          inventoryItemId_warehouseId: {
+            inventoryItemId: data.inventoryItemId,
+            warehouseId: data.warehouseId,
+          },
+        },
         data: { quantityAvailable: { decrement: data.quantity } },
       });
 
@@ -252,21 +282,44 @@ export class PrismaInventoryRepository {
   async transferStock(data: TransferStockDTO, actorId: string): Promise<StockTransactionDomain[]> {
     const results = await prisma.$transaction(async (tx) => {
       const sourceStock = await tx.stockLevel.findUnique({
-        where: { inventoryItemId_warehouseId: { inventoryItemId: data.inventoryItemId, warehouseId: data.sourceWarehouseId } },
+        where: {
+          inventoryItemId_warehouseId: {
+            inventoryItemId: data.inventoryItemId,
+            warehouseId: data.sourceWarehouseId,
+          },
+        },
       });
 
       if (!sourceStock || sourceStock.quantityAvailable < data.quantity) {
-        throw new AppError('Insufficient stock at source warehouse', HTTP_STATUS.BAD_REQUEST, 'INSUFFICIENT_STOCK');
+        throw new AppError(
+          'Insufficient stock at source warehouse',
+          HTTP_STATUS.BAD_REQUEST,
+          'INSUFFICIENT_STOCK'
+        );
       }
 
       await tx.stockLevel.update({
-        where: { inventoryItemId_warehouseId: { inventoryItemId: data.inventoryItemId, warehouseId: data.sourceWarehouseId } },
+        where: {
+          inventoryItemId_warehouseId: {
+            inventoryItemId: data.inventoryItemId,
+            warehouseId: data.sourceWarehouseId,
+          },
+        },
         data: { quantityAvailable: { decrement: data.quantity } },
       });
 
       await tx.stockLevel.upsert({
-        where: { inventoryItemId_warehouseId: { inventoryItemId: data.inventoryItemId, warehouseId: data.destinationWarehouseId } },
-        create: { inventoryItemId: data.inventoryItemId, warehouseId: data.destinationWarehouseId, quantityAvailable: data.quantity },
+        where: {
+          inventoryItemId_warehouseId: {
+            inventoryItemId: data.inventoryItemId,
+            warehouseId: data.destinationWarehouseId,
+          },
+        },
+        create: {
+          inventoryItemId: data.inventoryItemId,
+          warehouseId: data.destinationWarehouseId,
+          quantityAvailable: data.quantity,
+        },
         update: { quantityAvailable: { increment: data.quantity } },
       });
 
@@ -277,7 +330,9 @@ export class PrismaInventoryRepository {
           type: 'TRANSFER',
           quantity: -data.quantity,
           referenceId: data.referenceId,
-          notes: data.notes ? `Transfer OUT: ${data.notes}` : `Transfer to ${data.destinationWarehouseId}`,
+          notes: data.notes
+            ? `Transfer OUT: ${data.notes}`
+            : `Transfer to ${data.destinationWarehouseId}`,
           actorId,
         },
       });
@@ -289,7 +344,9 @@ export class PrismaInventoryRepository {
           type: 'TRANSFER',
           quantity: data.quantity,
           referenceId: data.referenceId,
-          notes: data.notes ? `Transfer IN: ${data.notes}` : `Transfer from ${data.sourceWarehouseId}`,
+          notes: data.notes
+            ? `Transfer IN: ${data.notes}`
+            : `Transfer from ${data.sourceWarehouseId}`,
           actorId,
         },
       });
@@ -297,7 +354,7 @@ export class PrismaInventoryRepository {
       return [outTx, inTx];
     });
 
-    return results.map(t => this.mapToTransactionDomain(t));
+    return results.map((t) => this.mapToTransactionDomain(t));
   }
 
   async getInventoryTimeline(inventoryItemId: string): Promise<StockTransactionDomain[]> {
@@ -305,11 +362,13 @@ export class PrismaInventoryRepository {
       where: { inventoryItemId },
       orderBy: { createdAt: 'desc' },
     });
-    return transactions.map(t => this.mapToTransactionDomain(t));
+    return transactions.map((t) => this.mapToTransactionDomain(t));
   }
 
   // --- Reservations ---
-  private mapToReservationDomain(r: import('@prisma/client').StockReservation): StockReservationDomain {
+  private mapToReservationDomain(
+    r: import('@prisma/client').StockReservation
+  ): StockReservationDomain {
     return {
       id: r.id,
       inventoryItemId: r.inventoryItemId,
@@ -329,17 +388,31 @@ export class PrismaInventoryRepository {
   async reserveStock(data: CreateReservationDTO, actorId: string): Promise<StockReservationDomain> {
     const result = await prisma.$transaction(async (tx) => {
       const stockLevel = await tx.stockLevel.findUnique({
-        where: { inventoryItemId_warehouseId: { inventoryItemId: data.inventoryItemId, warehouseId: data.warehouseId } },
+        where: {
+          inventoryItemId_warehouseId: {
+            inventoryItemId: data.inventoryItemId,
+            warehouseId: data.warehouseId,
+          },
+        },
       });
 
       // quantityAvailable - quantityReserved must be >= data.quantity
-      const available = stockLevel ? (stockLevel.quantityAvailable - stockLevel.quantityReserved) : 0;
+      const available = stockLevel ? stockLevel.quantityAvailable - stockLevel.quantityReserved : 0;
       if (available < data.quantity) {
-        throw new AppError('Insufficient unreserved stock available', HTTP_STATUS.BAD_REQUEST, 'INSUFFICIENT_STOCK');
+        throw new AppError(
+          'Insufficient unreserved stock available',
+          HTTP_STATUS.BAD_REQUEST,
+          'INSUFFICIENT_STOCK'
+        );
       }
 
       await tx.stockLevel.update({
-        where: { inventoryItemId_warehouseId: { inventoryItemId: data.inventoryItemId, warehouseId: data.warehouseId } },
+        where: {
+          inventoryItemId_warehouseId: {
+            inventoryItemId: data.inventoryItemId,
+            warehouseId: data.warehouseId,
+          },
+        },
         data: { quantityReserved: { increment: data.quantity } },
       });
 
@@ -360,17 +433,29 @@ export class PrismaInventoryRepository {
     return this.mapToReservationDomain(result);
   }
 
-  async fulfillReservation(id: string, actorId: string): Promise<{ reservation: StockReservationDomain, transaction: StockTransactionDomain }> {
+  async fulfillReservation(
+    id: string,
+    actorId: string
+  ): Promise<{ reservation: StockReservationDomain; transaction: StockTransactionDomain }> {
     const result = await prisma.$transaction(async (tx) => {
       const reservation = await tx.stockReservation.findUnique({ where: { id } });
       if (!reservation || reservation.status !== 'PENDING') {
-        throw new AppError('Reservation not found or not pending', HTTP_STATUS.BAD_REQUEST, 'INVALID_RESERVATION');
+        throw new AppError(
+          'Reservation not found or not pending',
+          HTTP_STATUS.BAD_REQUEST,
+          'INVALID_RESERVATION'
+        );
       }
 
       // Decrement reserved and available
       await tx.stockLevel.update({
-        where: { inventoryItemId_warehouseId: { inventoryItemId: reservation.inventoryItemId, warehouseId: reservation.warehouseId } },
-        data: { 
+        where: {
+          inventoryItemId_warehouseId: {
+            inventoryItemId: reservation.inventoryItemId,
+            warehouseId: reservation.warehouseId,
+          },
+        },
+        data: {
           quantityReserved: { decrement: reservation.quantity },
           quantityAvailable: { decrement: reservation.quantity },
         },
@@ -402,16 +487,29 @@ export class PrismaInventoryRepository {
     };
   }
 
-  async cancelReservation(id: string, _actorId: string, reason: 'CANCELLED' | 'EXPIRED'): Promise<StockReservationDomain> {
+  async cancelReservation(
+    id: string,
+    _actorId: string,
+    reason: 'CANCELLED' | 'EXPIRED'
+  ): Promise<StockReservationDomain> {
     const result = await prisma.$transaction(async (tx) => {
       const reservation = await tx.stockReservation.findUnique({ where: { id } });
       if (!reservation || reservation.status !== 'PENDING') {
-        throw new AppError('Reservation not found or not pending', HTTP_STATUS.BAD_REQUEST, 'INVALID_RESERVATION');
+        throw new AppError(
+          'Reservation not found or not pending',
+          HTTP_STATUS.BAD_REQUEST,
+          'INVALID_RESERVATION'
+        );
       }
 
       // Decrement reserved (freeing it up)
       await tx.stockLevel.update({
-        where: { inventoryItemId_warehouseId: { inventoryItemId: reservation.inventoryItemId, warehouseId: reservation.warehouseId } },
+        where: {
+          inventoryItemId_warehouseId: {
+            inventoryItemId: reservation.inventoryItemId,
+            warehouseId: reservation.warehouseId,
+          },
+        },
         data: { quantityReserved: { decrement: reservation.quantity } },
       });
 
@@ -424,16 +522,21 @@ export class PrismaInventoryRepository {
     return this.mapToReservationDomain(result);
   }
 
-  async getActiveReservations(inventoryItemId: string, warehouseId: string): Promise<StockReservationDomain[]> {
+  async getActiveReservations(
+    inventoryItemId: string,
+    warehouseId: string
+  ): Promise<StockReservationDomain[]> {
     const reservations = await prisma.stockReservation.findMany({
       where: { inventoryItemId, warehouseId, status: 'PENDING' },
       orderBy: { createdAt: 'asc' },
     });
-    return reservations.map(r => this.mapToReservationDomain(r));
+    return reservations.map((r) => this.mapToReservationDomain(r));
   }
 
   // --- Cycle Counts ---
-  private mapToCycleCountDomain(c: import('@prisma/client').CycleCount & { items?: import('@prisma/client').CycleCountItem[] }): CycleCountDomain {
+  private mapToCycleCountDomain(
+    c: import('@prisma/client').CycleCount & { items?: import('@prisma/client').CycleCountItem[] }
+  ): CycleCountDomain {
     return {
       id: c.id,
       warehouseId: c.warehouseId,
@@ -443,31 +546,40 @@ export class PrismaInventoryRepository {
       completedAt: c.completedAt,
       createdAt: c.createdAt,
       updatedAt: c.updatedAt,
-      items: c.items ? c.items.map(i => ({
-        id: i.id,
-        cycleCountId: i.cycleCountId,
-        inventoryItemId: i.inventoryItemId,
-        expectedQuantity: i.expectedQuantity,
-        countedQuantity: i.countedQuantity,
-        variance: i.variance,
-        adjustmentReason: i.adjustmentReason,
-        notes: i.notes,
-      })) : undefined,
+      items: c.items
+        ? c.items.map((i) => ({
+            id: i.id,
+            cycleCountId: i.cycleCountId,
+            inventoryItemId: i.inventoryItemId,
+            expectedQuantity: i.expectedQuantity,
+            countedQuantity: i.countedQuantity,
+            variance: i.variance,
+            adjustmentReason: i.adjustmentReason,
+            notes: i.notes,
+          }))
+        : undefined,
     };
   }
 
   async startCycleCount(data: CreateCycleCountDTO, actorId: string): Promise<CycleCountDomain> {
     const result = await prisma.$transaction(async (tx) => {
       // Build items with expected quantities
-      const itemsData = await Promise.all(data.inventoryItemIds.map(async (itemId) => {
-        const stockLevel = await tx.stockLevel.findUnique({
-          where: { inventoryItemId_warehouseId: { inventoryItemId: itemId, warehouseId: data.warehouseId } },
-        });
-        return {
-          inventoryItemId: itemId,
-          expectedQuantity: stockLevel ? stockLevel.quantityAvailable : 0,
-        };
-      }));
+      const itemsData = await Promise.all(
+        data.inventoryItemIds.map(async (itemId) => {
+          const stockLevel = await tx.stockLevel.findUnique({
+            where: {
+              inventoryItemId_warehouseId: {
+                inventoryItemId: itemId,
+                warehouseId: data.warehouseId,
+              },
+            },
+          });
+          return {
+            inventoryItemId: itemId,
+            expectedQuantity: stockLevel ? stockLevel.quantityAvailable : 0,
+          };
+        })
+      );
 
       return tx.cycleCount.create({
         data: {
@@ -488,10 +600,16 @@ export class PrismaInventoryRepository {
 
   async recordCount(cycleCountId: string, data: RecordCountDTO): Promise<CycleCountItemDomain> {
     const item = await prisma.cycleCountItem.findUnique({
-      where: { cycleCountId_inventoryItemId: { cycleCountId, inventoryItemId: data.inventoryItemId } },
+      where: {
+        cycleCountId_inventoryItemId: { cycleCountId, inventoryItemId: data.inventoryItemId },
+      },
     });
     if (!item) {
-      throw new AppError('Item not found in this cycle count', HTTP_STATUS.NOT_FOUND, 'INVALID_ITEM');
+      throw new AppError(
+        'Item not found in this cycle count',
+        HTTP_STATUS.NOT_FOUND,
+        'INVALID_ITEM'
+      );
     }
 
     const variance = data.countedQuantity - item.expectedQuantity;
@@ -518,7 +636,10 @@ export class PrismaInventoryRepository {
     };
   }
 
-  async completeCycleCount(id: string, actorId: string): Promise<{ cycleCount: CycleCountDomain, transactions: StockTransactionDomain[] }> {
+  async completeCycleCount(
+    id: string,
+    actorId: string
+  ): Promise<{ cycleCount: CycleCountDomain; transactions: StockTransactionDomain[] }> {
     const result = await prisma.$transaction(async (tx) => {
       const cycleCount = await tx.cycleCount.findUnique({
         where: { id },
@@ -526,13 +647,21 @@ export class PrismaInventoryRepository {
       });
 
       if (!cycleCount || cycleCount.status !== 'IN_PROGRESS') {
-        throw new AppError('Cycle count not found or not in progress', HTTP_STATUS.BAD_REQUEST, 'INVALID_CYCLE_COUNT');
+        throw new AppError(
+          'Cycle count not found or not in progress',
+          HTTP_STATUS.BAD_REQUEST,
+          'INVALID_CYCLE_COUNT'
+        );
       }
 
       // Check if all items are counted
-      const uncounted = cycleCount.items.filter(i => i.countedQuantity === null);
+      const uncounted = cycleCount.items.filter((i) => i.countedQuantity === null);
       if (uncounted.length > 0) {
-        throw new AppError('Cannot complete cycle count with uncounted items', HTTP_STATUS.BAD_REQUEST, 'UNCOUNTED_ITEMS');
+        throw new AppError(
+          'Cannot complete cycle count with uncounted items',
+          HTTP_STATUS.BAD_REQUEST,
+          'UNCOUNTED_ITEMS'
+        );
       }
 
       const transactions: StockTransactionDomain[] = [];
@@ -548,15 +677,26 @@ export class PrismaInventoryRepository {
               type: 'ADJUSTMENT',
               quantity: item.variance,
               referenceId: `CC-${cycleCount.id}`,
-              notes: item.adjustmentReason ? `Adjustment for ${item.adjustmentReason}` : `Cycle Count Adjustment`,
+              notes: item.adjustmentReason
+                ? `Adjustment for ${item.adjustmentReason}`
+                : `Cycle Count Adjustment`,
               actorId,
             },
           });
 
           // Update stock level
           await tx.stockLevel.upsert({
-            where: { inventoryItemId_warehouseId: { inventoryItemId: item.inventoryItemId, warehouseId: cycleCount.warehouseId } },
-            create: { inventoryItemId: item.inventoryItemId, warehouseId: cycleCount.warehouseId, quantityAvailable: item.variance > 0 ? item.variance : 0 },
+            where: {
+              inventoryItemId_warehouseId: {
+                inventoryItemId: item.inventoryItemId,
+                warehouseId: cycleCount.warehouseId,
+              },
+            },
+            create: {
+              inventoryItemId: item.inventoryItemId,
+              warehouseId: cycleCount.warehouseId,
+              quantityAvailable: item.variance > 0 ? item.variance : 0,
+            },
             update: { quantityAvailable: { increment: item.variance } },
           });
 
@@ -580,7 +720,15 @@ export class PrismaInventoryRepository {
   }
 
   // --- Analytics & Low Stock ---
-  async checkLowStock(): Promise<{ inventoryItemId: string, sku: string, name: string, quantityAvailable: number, reorderPoint: number }[]> {
+  async checkLowStock(): Promise<
+    {
+      inventoryItemId: string;
+      sku: string;
+      name: string;
+      quantityAvailable: number;
+      reorderPoint: number;
+    }[]
+  > {
     // Get all items with their total stock available across all warehouses
     const items = await prisma.inventoryItem.findMany({
       include: {
@@ -590,7 +738,10 @@ export class PrismaInventoryRepository {
 
     const lowStockItems = [];
     for (const item of items) {
-      const totalAvailable = item.stockLevels.reduce((sum, level) => sum + level.quantityAvailable, 0);
+      const totalAvailable = item.stockLevels.reduce(
+        (sum, level) => sum + level.quantityAvailable,
+        0
+      );
       if (totalAvailable <= item.reorderPoint) {
         lowStockItems.push({
           inventoryItemId: item.id,
@@ -607,7 +758,10 @@ export class PrismaInventoryRepository {
   async getInventoryKPIs(): Promise<InventoryKPIDomain> {
     const totalItems = await prisma.inventoryItem.count();
     const stockLevels = await prisma.stockLevel.findMany();
-    const totalStockAvailable = stockLevels.reduce((sum, level) => sum + level.quantityAvailable, 0);
+    const totalStockAvailable = stockLevels.reduce(
+      (sum, level) => sum + level.quantityAvailable,
+      0
+    );
     const lowStockList = await this.checkLowStock();
 
     return {
@@ -624,7 +778,7 @@ export class PrismaInventoryRepository {
       },
     });
 
-    return warehouses.map(w => ({
+    return warehouses.map((w) => ({
       warehouseId: w.id,
       warehouseName: w.name,
       totalStockAvailable: w.stockLevels.reduce((sum, level) => sum + level.quantityAvailable, 0),

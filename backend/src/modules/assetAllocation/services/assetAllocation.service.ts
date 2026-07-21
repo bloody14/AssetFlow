@@ -23,9 +23,9 @@ export class AssetAllocationService {
     const user = await this.userRepo.findById(data.allocatedToId);
     if (!user) throw new AppError('User not found', HTTP_STATUS.NOT_FOUND, 'USER_NOT_FOUND');
     const allocation = await this.repo.allocateAsset(data, allocatedById);
-    
+
     eventBus.publish('AssetAllocated', allocation, allocatedById);
-    
+
     return allocation;
   }
 
@@ -41,7 +41,7 @@ export class AssetAllocationService {
   ): Promise<AssetAllocationDomain> {
     const user = await this.userRepo.findById(data.newAllocatedToId);
     if (!user) throw new AppError('User not found', HTTP_STATUS.NOT_FOUND, 'USER_NOT_FOUND');
-    
+
     const allocation = await this.repo.transferAsset(data, transferredById);
     eventBus.publish('AssetTransferred', allocation, transferredById);
     return allocation;

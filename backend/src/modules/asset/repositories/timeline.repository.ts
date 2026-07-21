@@ -1,5 +1,5 @@
-import { prisma } from '../../../config/prisma';
 import { AssetTimeline } from '@prisma/client';
+import { prisma } from '../../../config/prisma';
 
 export type CreateTimelineDTO = {
   assetId: string;
@@ -16,7 +16,11 @@ export class PrismaTimelineRepository {
     });
   }
 
-  async findByAssetId(assetId: string, skip: number = 0, take: number = 20): Promise<{ data: AssetTimeline[], total: number }> {
+  async findByAssetId(
+    assetId: string,
+    skip: number = 0,
+    take: number = 20
+  ): Promise<{ data: AssetTimeline[]; total: number }> {
     const [events, total] = await Promise.all([
       prisma.assetTimeline.findMany({
         where: { assetId, deletedAt: null },

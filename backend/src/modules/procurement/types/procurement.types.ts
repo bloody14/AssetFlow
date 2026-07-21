@@ -1,4 +1,5 @@
-export type SupplierStatus = 'ACTIVE' | 'PENDING_APPROVAL' | 'INACTIVE' | 'SUSPENDED' | 'BLACKLISTED';
+export type SupplierStatus =
+  'ACTIVE' | 'PENDING_APPROVAL' | 'INACTIVE' | 'SUSPENDED' | 'BLACKLISTED';
 
 export interface SupplierDomain {
   id: string;
@@ -148,7 +149,8 @@ export interface SubmitApprovalDTO {
 // Phase 4.3: Purchase Orders
 // ------------------------------------------------------
 
-export type PurchaseOrderStatus = 'DRAFT' | 'ISSUED' | 'PARTIALLY_RECEIVED' | 'FULFILLED' | 'CANCELLED';
+export type PurchaseOrderStatus =
+  'DRAFT' | 'ISSUED' | 'PARTIALLY_RECEIVED' | 'FULFILLED' | 'CANCELLED';
 
 export interface PurchaseOrderDomain {
   id: string;

@@ -35,7 +35,11 @@ export class PrismaAssetRepository {
     );
   }
 
-  async createWithTimeline(data: CreateAssetDTO, actorId: string, actorType: string = 'USER'): Promise<AssetDomain> {
+  async createWithTimeline(
+    data: CreateAssetDTO,
+    actorId: string,
+    actorType: string = 'USER'
+  ): Promise<AssetDomain> {
     const { randomUUID } = require('crypto');
     const assetId = randomUUID();
     const qrIdentity = `af-urn:asset:${assetId}`;
@@ -86,14 +90,17 @@ export class PrismaAssetRepository {
     return assets.map((a) => this.mapToDomain(a));
   }
 
-  async findAllPaginated(skip: number, take: number): Promise<{ data: AssetDomain[], total: number }> {
+  async findAllPaginated(
+    skip: number,
+    take: number
+  ): Promise<{ data: AssetDomain[]; total: number }> {
     const [assets, total] = await Promise.all([
       prisma.asset.findMany({ skip, take }),
-      prisma.asset.count()
+      prisma.asset.count(),
     ]);
     return {
       data: assets.map((a) => this.mapToDomain(a)),
-      total
+      total,
     };
   }
 

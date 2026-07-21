@@ -18,7 +18,7 @@ export class EmployeeController {
       total,
       page,
       limit,
-      totalPages: Math.ceil(total / limit)
+      totalPages: Math.ceil(total / limit),
     });
   };
 

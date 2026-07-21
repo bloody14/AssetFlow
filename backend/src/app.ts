@@ -1,5 +1,8 @@
 import express from 'express';
 import cookieParser from 'cookie-parser';
+import cors from 'cors';
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
 import { correlationIdMiddleware } from './middlewares/correlationId.middleware';
 import authRoutes from './modules/auth/routes/auth.routes';
 import departmentRoutes from './modules/department/routes/department.routes';
@@ -19,10 +22,6 @@ import { errorHandler } from './shared/errorHandler';
 import * as healthController from './controllers/health.controller';
 import { env } from './config/env';
 
-import cors from 'cors';
-import helmet from 'helmet';
-import rateLimit from 'express-rate-limit';
-
 const app = express();
 
 // Security: HTTP Headers via Helmet
@@ -39,8 +38,8 @@ const globalLimiter = rateLimit({
     error: {
       code: 'TOO_MANY_REQUESTS',
       message: 'Too many requests from this IP, please try again after 15 minutes',
-    }
-  }
+    },
+  },
 });
 app.use(globalLimiter);
 
@@ -48,12 +47,14 @@ app.use(globalLimiter);
 app.use(correlationIdMiddleware);
 
 // Configure CORS for the authorized frontend
-app.use(cors({
-  origin: env.CLIENT_URL,
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Correlation-ID']
-}));
+app.use(
+  cors({
+    origin: env.CLIENT_URL,
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Correlation-ID'],
+  })
+);
 
 app.use(express.json());
 app.use(cookieParser());

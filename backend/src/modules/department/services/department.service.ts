@@ -42,7 +42,10 @@ export class DepartmentService {
     return dept;
   }
 
-  async getAllDepartments(page: number = 1, limit: number = 20): Promise<{ data: DepartmentDomain[], total: number }> {
+  async getAllDepartments(
+    page: number = 1,
+    limit: number = 20
+  ): Promise<{ data: DepartmentDomain[]; total: number }> {
     const skip = (page - 1) * limit;
     return this.repo.findAllPaginated(skip, limit);
   }

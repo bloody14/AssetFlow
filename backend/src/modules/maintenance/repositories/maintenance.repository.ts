@@ -208,9 +208,9 @@ export class PrismaMaintenanceRepository {
 
       await tx.asset.update({
         where: { id: request.assetId },
-        data: { 
+        data: {
           status: 'AVAILABLE',
-          ...(data.condition ? { condition: data.condition } : {})
+          ...(data.condition ? { condition: data.condition } : {}),
         },
       });
 

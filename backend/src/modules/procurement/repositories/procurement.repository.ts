@@ -32,17 +32,27 @@ export class PrismaProcurementRepository {
   async createSupplier(data: CreateSupplierDTO): Promise<SupplierDomain> {
     const existing = await prisma.supplier.findUnique({ where: { name: data.name } });
     if (existing) {
-      throw new AppError('Supplier name already exists', HTTP_STATUS.CONFLICT, 'DUPLICATE_SUPPLIER_NAME');
+      throw new AppError(
+        'Supplier name already exists',
+        HTTP_STATUS.CONFLICT,
+        'DUPLICATE_SUPPLIER_NAME'
+      );
     }
-    
+
     if (data.code) {
       const existingCode = await prisma.supplier.findUnique({ where: { code: data.code } });
       if (existingCode) {
-        throw new AppError('Supplier code already exists', HTTP_STATUS.CONFLICT, 'DUPLICATE_SUPPLIER_CODE');
+        throw new AppError(
+          'Supplier code already exists',
+          HTTP_STATUS.CONFLICT,
+          'DUPLICATE_SUPPLIER_CODE'
+        );
       }
     }
 
-    const supplier = await prisma.supplier.create({ data: { ...data, status: data.status || 'PENDING_APPROVAL' } });
+    const supplier = await prisma.supplier.create({
+      data: { ...data, status: data.status || 'PENDING_APPROVAL' },
+    });
     return this.mapToSupplierDomain(supplier);
   }
 
@@ -64,7 +74,9 @@ export class PrismaProcurementRepository {
   }
 
   // --- Supplier Contact ---
-  private mapToSupplierContactDomain(c: import('@prisma/client').SupplierContact): SupplierContactDomain {
+  private mapToSupplierContactDomain(
+    c: import('@prisma/client').SupplierContact
+  ): SupplierContactDomain {
     return {
       id: c.id,
       supplierId: c.supplierId,
@@ -85,12 +97,16 @@ export class PrismaProcurementRepository {
         supplierId_email: {
           supplierId: data.supplierId,
           email: data.email,
-        }
-      }
+        },
+      },
     });
 
     if (existing) {
-      throw new AppError('Supplier contact with this email already exists for this supplier', HTTP_STATUS.CONFLICT, 'DUPLICATE_CONTACT_EMAIL');
+      throw new AppError(
+        'Supplier contact with this email already exists for this supplier',
+        HTTP_STATUS.CONFLICT,
+        'DUPLICATE_CONTACT_EMAIL'
+      );
     }
 
     if (data.isPrimary) {
@@ -106,11 +122,13 @@ export class PrismaProcurementRepository {
 
   async getSupplierContacts(supplierId: string): Promise<SupplierContactDomain[]> {
     const contacts = await prisma.supplierContact.findMany({ where: { supplierId } });
-    return contacts.map(c => this.mapToSupplierContactDomain(c));
+    return contacts.map((c) => this.mapToSupplierContactDomain(c));
   }
 
   // --- Supplier Catalog ---
-  private mapToSupplierCatalogItemDomain(c: import('@prisma/client').SupplierCatalogItem): SupplierCatalogItemDomain {
+  private mapToSupplierCatalogItemDomain(
+    c: import('@prisma/client').SupplierCatalogItem
+  ): SupplierCatalogItemDomain {
     return {
       id: c.id,
       supplierId: c.supplierId,
@@ -132,12 +150,16 @@ export class PrismaProcurementRepository {
         supplierId_supplierSku: {
           supplierId: data.supplierId,
           supplierSku: data.supplierSku,
-        }
-      }
+        },
+      },
     });
 
     if (existingSku) {
-      throw new AppError('Supplier already has this SKU in their catalog', HTTP_STATUS.CONFLICT, 'DUPLICATE_SUPPLIER_SKU');
+      throw new AppError(
+        'Supplier already has this SKU in their catalog',
+        HTTP_STATUS.CONFLICT,
+        'DUPLICATE_SUPPLIER_SKU'
+      );
     }
 
     const existingInventoryItemMap = await prisma.supplierCatalogItem.findUnique({
@@ -145,12 +167,16 @@ export class PrismaProcurementRepository {
         supplierId_inventoryItemId: {
           supplierId: data.supplierId,
           inventoryItemId: data.inventoryItemId,
-        }
-      }
+        },
+      },
     });
 
     if (existingInventoryItemMap) {
-      throw new AppError('Supplier already has an entry for this inventory item', HTTP_STATUS.CONFLICT, 'DUPLICATE_INVENTORY_ITEM_MAPPING');
+      throw new AppError(
+        'Supplier already has an entry for this inventory item',
+        HTTP_STATUS.CONFLICT,
+        'DUPLICATE_INVENTORY_ITEM_MAPPING'
+      );
     }
 
     const item = await prisma.supplierCatalogItem.create({ data });
@@ -159,14 +185,16 @@ export class PrismaProcurementRepository {
 
   async getSupplierCatalog(supplierId: string): Promise<SupplierCatalogItemDomain[]> {
     const catalog = await prisma.supplierCatalogItem.findMany({ where: { supplierId } });
-    return catalog.map(c => this.mapToSupplierCatalogItemDomain(c));
+    return catalog.map((c) => this.mapToSupplierCatalogItemDomain(c));
   }
 
   // --- Purchase Requests ---
-  private mapToPurchaseRequestDomain(pr: import('@prisma/client').PurchaseRequest & {
-    items?: import('@prisma/client').PurchaseRequestItem[];
-    approvals?: import('@prisma/client').PurchaseRequestApproval[];
-  }): import('../types/procurement.types').PurchaseRequestDomain {
+  private mapToPurchaseRequestDomain(
+    pr: import('@prisma/client').PurchaseRequest & {
+      items?: import('@prisma/client').PurchaseRequestItem[];
+      approvals?: import('@prisma/client').PurchaseRequestApproval[];
+    }
+  ): import('../types/procurement.types').PurchaseRequestDomain {
     return {
       id: pr.id,
       requesterId: pr.requesterId,
@@ -177,7 +205,7 @@ export class PrismaProcurementRepository {
       createdAt: pr.createdAt,
       updatedAt: pr.updatedAt,
       deletedAt: pr.deletedAt,
-      items: pr.items?.map(i => ({
+      items: pr.items?.map((i) => ({
         id: i.id,
         purchaseRequestId: i.purchaseRequestId,
         inventoryItemId: i.inventoryItemId,
@@ -187,7 +215,7 @@ export class PrismaProcurementRepository {
         createdAt: i.createdAt,
         updatedAt: i.updatedAt,
       })),
-      approvals: pr.approvals?.map(a => ({
+      approvals: pr.approvals?.map((a) => ({
         id: a.id,
         purchaseRequestId: a.purchaseRequestId,
         approverId: a.approverId,
@@ -200,7 +228,9 @@ export class PrismaProcurementRepository {
     };
   }
 
-  async createPurchaseRequest(data: import('../types/procurement.types').CreatePurchaseRequestDTO): Promise<import('../types/procurement.types').PurchaseRequestDomain> {
+  async createPurchaseRequest(
+    data: import('../types/procurement.types').CreatePurchaseRequestDTO
+  ): Promise<import('../types/procurement.types').PurchaseRequestDomain> {
     const pr = await prisma.purchaseRequest.create({
       data: {
         requesterId: data.requesterId,
@@ -209,7 +239,7 @@ export class PrismaProcurementRepository {
         priority: data.priority || 'MEDIUM',
         status: 'PENDING',
         items: {
-          create: data.items.map(item => ({
+          create: data.items.map((item) => ({
             inventoryItemId: item.inventoryItemId,
             quantity: item.quantity,
             estimatedPrice: item.estimatedPrice,
@@ -224,7 +254,9 @@ export class PrismaProcurementRepository {
     return this.mapToPurchaseRequestDomain(pr);
   }
 
-  async getPurchaseRequest(id: string): Promise<import('../types/procurement.types').PurchaseRequestDomain> {
+  async getPurchaseRequest(
+    id: string
+  ): Promise<import('../types/procurement.types').PurchaseRequestDomain> {
     const pr = await prisma.purchaseRequest.findUnique({
       where: { id },
       include: {
@@ -242,7 +274,10 @@ export class PrismaProcurementRepository {
     return this.mapToPurchaseRequestDomain(pr);
   }
 
-  async submitApproval(id: string, data: import('../types/procurement.types').SubmitApprovalDTO): Promise<import('../types/procurement.types').PurchaseRequestDomain> {
+  async submitApproval(
+    id: string,
+    data: import('../types/procurement.types').SubmitApprovalDTO
+  ): Promise<import('../types/procurement.types').PurchaseRequestDomain> {
     const result = await prisma.$transaction(async (tx) => {
       const pr = await tx.purchaseRequest.findUnique({ where: { id } });
       if (!pr) {
@@ -250,7 +285,11 @@ export class PrismaProcurementRepository {
       }
 
       if (pr.status !== 'PENDING') {
-        throw new AppError('Purchase request is no longer pending', HTTP_STATUS.BAD_REQUEST, 'PR_NOT_PENDING');
+        throw new AppError(
+          'Purchase request is no longer pending',
+          HTTP_STATUS.BAD_REQUEST,
+          'PR_NOT_PENDING'
+        );
       }
 
       // Record approval
@@ -261,7 +300,7 @@ export class PrismaProcurementRepository {
           status: data.status,
           comments: data.comments,
           step: 1, // Phase 4.2 supports single step base currently
-        }
+        },
       });
 
       // Update PR status
@@ -275,7 +314,7 @@ export class PrismaProcurementRepository {
           approvals: {
             orderBy: { createdAt: 'asc' },
           },
-        }
+        },
       });
 
       return updatedPr;
@@ -285,9 +324,11 @@ export class PrismaProcurementRepository {
   }
 
   // --- Purchase Orders ---
-  private mapToPurchaseOrderDomain(po: import('@prisma/client').PurchaseOrder & {
-    items?: import('@prisma/client').PurchaseOrderItem[];
-  }): import('../types/procurement.types').PurchaseOrderDomain {
+  private mapToPurchaseOrderDomain(
+    po: import('@prisma/client').PurchaseOrder & {
+      items?: import('@prisma/client').PurchaseOrderItem[];
+    }
+  ): import('../types/procurement.types').PurchaseOrderDomain {
     return {
       id: po.id,
       orderNumber: po.orderNumber,
@@ -298,7 +339,7 @@ export class PrismaProcurementRepository {
       createdAt: po.createdAt,
       updatedAt: po.updatedAt,
       deletedAt: po.deletedAt,
-      items: po.items?.map(i => ({
+      items: po.items?.map((i) => ({
         id: i.id,
         purchaseOrderId: i.purchaseOrderId,
         purchaseRequestItemId: i.purchaseRequestItemId,
@@ -313,11 +354,13 @@ export class PrismaProcurementRepository {
     };
   }
 
-  async generatePurchaseOrder(data: import('../types/procurement.types').CreatePurchaseOrderDTO): Promise<import('../types/procurement.types').PurchaseOrderDomain> {
+  async generatePurchaseOrder(
+    data: import('../types/procurement.types').CreatePurchaseOrderDTO
+  ): Promise<import('../types/procurement.types').PurchaseOrderDomain> {
     const result = await prisma.$transaction(async (tx) => {
       const pr = await tx.purchaseRequest.findUnique({
         where: { id: data.purchaseRequestId },
-        include: { items: true }
+        include: { items: true },
       });
 
       if (!pr) {
@@ -325,16 +368,22 @@ export class PrismaProcurementRepository {
       }
 
       if (pr.status !== 'APPROVED') {
-        throw new AppError('Purchase request must be APPROVED to generate an order', HTTP_STATUS.BAD_REQUEST, 'PR_NOT_APPROVED');
+        throw new AppError(
+          'Purchase request must be APPROVED to generate an order',
+          HTTP_STATUS.BAD_REQUEST,
+          'PR_NOT_APPROVED'
+        );
       }
 
       const supplierCatalog = await tx.supplierCatalogItem.findMany({
-        where: { supplierId: data.supplierId }
+        where: { supplierId: data.supplierId },
       });
 
       const poItems = [];
       for (const prItem of pr.items) {
-        const catalogEntry = supplierCatalog.find(c => c.inventoryItemId === prItem.inventoryItemId);
+        const catalogEntry = supplierCatalog.find(
+          (c) => c.inventoryItemId === prItem.inventoryItemId
+        );
         if (catalogEntry) {
           poItems.push({
             purchaseRequestItemId: prItem.id,
@@ -347,7 +396,11 @@ export class PrismaProcurementRepository {
       }
 
       if (poItems.length === 0) {
-        throw new AppError('No items in the Purchase Request are supplied by this Supplier', HTTP_STATUS.BAD_REQUEST, 'NO_MATCHING_ITEMS');
+        throw new AppError(
+          'No items in the Purchase Request are supplied by this Supplier',
+          HTTP_STATUS.BAD_REQUEST,
+          'NO_MATCHING_ITEMS'
+        );
       }
 
       const orderNumber = `PO-${Date.now()}`;
@@ -361,9 +414,9 @@ export class PrismaProcurementRepository {
           status: 'DRAFT',
           items: {
             create: poItems,
-          }
+          },
         },
-        include: { items: true }
+        include: { items: true },
       });
 
       return po;
@@ -372,7 +425,9 @@ export class PrismaProcurementRepository {
     return this.mapToPurchaseOrderDomain(result);
   }
 
-  async getPurchaseOrder(id: string): Promise<import('../types/procurement.types').PurchaseOrderDomain> {
+  async getPurchaseOrder(
+    id: string
+  ): Promise<import('../types/procurement.types').PurchaseOrderDomain> {
     const po = await prisma.purchaseOrder.findUnique({
       where: { id },
       include: { items: true },
@@ -385,15 +440,21 @@ export class PrismaProcurementRepository {
     return this.mapToPurchaseOrderDomain(po);
   }
 
-  async issuePurchaseOrder(id: string): Promise<import('../types/procurement.types').PurchaseOrderDomain> {
+  async issuePurchaseOrder(
+    id: string
+  ): Promise<import('../types/procurement.types').PurchaseOrderDomain> {
     const po = await prisma.purchaseOrder.findUnique({ where: { id } });
-    
+
     if (!po) {
       throw new AppError('Purchase order not found', HTTP_STATUS.NOT_FOUND, 'PO_NOT_FOUND');
     }
 
     if (po.status !== 'DRAFT') {
-      throw new AppError('Only DRAFT purchase orders can be issued', HTTP_STATUS.BAD_REQUEST, 'PO_NOT_DRAFT');
+      throw new AppError(
+        'Only DRAFT purchase orders can be issued',
+        HTTP_STATUS.BAD_REQUEST,
+        'PO_NOT_DRAFT'
+      );
     }
 
     const updated = await prisma.purchaseOrder.update({
@@ -406,9 +467,11 @@ export class PrismaProcurementRepository {
   }
 
   // --- Goods Receipt ---
-  private mapToGoodsReceiptDomain(gr: import('@prisma/client').GoodsReceipt & {
-    items?: import('@prisma/client').GoodsReceiptItem[];
-  }): import('../types/procurement.types').GoodsReceiptDomain {
+  private mapToGoodsReceiptDomain(
+    gr: import('@prisma/client').GoodsReceipt & {
+      items?: import('@prisma/client').GoodsReceiptItem[];
+    }
+  ): import('../types/procurement.types').GoodsReceiptDomain {
     return {
       id: gr.id,
       receiptNumber: gr.receiptNumber,
@@ -417,7 +480,7 @@ export class PrismaProcurementRepository {
       createdAt: gr.createdAt,
       updatedAt: gr.updatedAt,
       deletedAt: gr.deletedAt,
-      items: gr.items?.map(i => ({
+      items: gr.items?.map((i) => ({
         id: i.id,
         goodsReceiptId: i.goodsReceiptId,
         purchaseOrderItemId: i.purchaseOrderItemId,
@@ -429,7 +492,9 @@ export class PrismaProcurementRepository {
     };
   }
 
-  async executeGoodsReceipt(data: import('../types/procurement.types').ExecuteGoodsReceiptDTO): Promise<import('../types/procurement.types').GoodsReceiptDomain> {
+  async executeGoodsReceipt(
+    data: import('../types/procurement.types').ExecuteGoodsReceiptDTO
+  ): Promise<import('../types/procurement.types').GoodsReceiptDomain> {
     const result = await prisma.$transaction(async (tx) => {
       const po = await tx.purchaseOrder.findUnique({
         where: { id: data.purchaseOrderId },
@@ -441,21 +506,33 @@ export class PrismaProcurementRepository {
       }
 
       if (po.status !== 'ISSUED' && po.status !== 'PARTIALLY_RECEIVED') {
-        throw new AppError('Purchase order must be ISSUED or PARTIALLY_RECEIVED to receive goods', HTTP_STATUS.BAD_REQUEST, 'PO_NOT_RECEIVABLE');
+        throw new AppError(
+          'Purchase order must be ISSUED or PARTIALLY_RECEIVED to receive goods',
+          HTTP_STATUS.BAD_REQUEST,
+          'PO_NOT_RECEIVABLE'
+        );
       }
 
       const receiptNumber = `GR-${Date.now()}`;
       const grItems = [];
 
       for (const item of data.items) {
-        const poItem = po.items.find(i => i.id === item.purchaseOrderItemId);
+        const poItem = po.items.find((i) => i.id === item.purchaseOrderItemId);
         if (!poItem) {
-          throw new AppError(`PO Item ${item.purchaseOrderItemId} does not belong to this PO`, HTTP_STATUS.BAD_REQUEST, 'INVALID_PO_ITEM');
+          throw new AppError(
+            `PO Item ${item.purchaseOrderItemId} does not belong to this PO`,
+            HTTP_STATUS.BAD_REQUEST,
+            'INVALID_PO_ITEM'
+          );
         }
 
         const remainingQuantity = poItem.quantityOrdered - poItem.quantityReceived;
         if (item.quantityReceived > remainingQuantity) {
-          throw new AppError(`Cannot receive more than ordered for item ${item.purchaseOrderItemId}`, HTTP_STATUS.BAD_REQUEST, 'OVER_RECEIPT');
+          throw new AppError(
+            `Cannot receive more than ordered for item ${item.purchaseOrderItemId}`,
+            HTTP_STATUS.BAD_REQUEST,
+            'OVER_RECEIPT'
+          );
         }
 
         // Update PO Item quantity
@@ -478,7 +555,7 @@ export class PrismaProcurementRepository {
           receivedById: data.receivedById,
           items: {
             create: grItems,
-          }
+          },
         },
         include: { items: true },
       });
@@ -488,8 +565,8 @@ export class PrismaProcurementRepository {
         where: { purchaseOrderId: po.id },
       });
 
-      const isFullyReceived = updatedPoItems.every(i => i.quantityReceived === i.quantityOrdered);
-      const isPartiallyReceived = updatedPoItems.some(i => i.quantityReceived > 0);
+      const isFullyReceived = updatedPoItems.every((i) => i.quantityReceived === i.quantityOrdered);
+      const isPartiallyReceived = updatedPoItems.some((i) => i.quantityReceived > 0);
 
       let newStatus: import('../types/procurement.types').PurchaseOrderStatus = po.status;
       if (isFullyReceived) {
@@ -512,20 +589,27 @@ export class PrismaProcurementRepository {
   }
 
   // --- Procurement Analytics ---
-  async recordTimelineEvent(purchaseOrderId: string | null, purchaseRequestId: string | null, eventType: string, payload: any): Promise<void> {
+  async recordTimelineEvent(
+    purchaseOrderId: string | null,
+    purchaseRequestId: string | null,
+    eventType: string,
+    payload: any
+  ): Promise<void> {
     await prisma.procurementTimeline.create({
       data: {
         purchaseOrderId,
         purchaseRequestId,
         eventType,
         eventPayload: payload,
-      }
+      },
     });
   }
 
-  async getSupplierMetrics(supplierId: string): Promise<import('../types/procurement.types').SupplierMetricsDomain> {
+  async getSupplierMetrics(
+    supplierId: string
+  ): Promise<import('../types/procurement.types').SupplierMetricsDomain> {
     const metrics = await prisma.supplierMetrics.findUnique({
-      where: { supplierId }
+      where: { supplierId },
     });
 
     if (!metrics) {
@@ -549,7 +633,7 @@ export class PrismaProcurementRepository {
     // For Phase 4.5, we will scaffold the metrics calculation logic to update the numbers.
     const pos = await prisma.purchaseOrder.findMany({
       where: { supplierId, status: 'FULFILLED' },
-      include: { goodsReceipts: true }
+      include: { goodsReceipts: true },
     });
 
     const totalOrders = pos.length;
@@ -558,7 +642,9 @@ export class PrismaProcurementRepository {
     for (const po of pos) {
       if (po.goodsReceipts.length > 0) {
         // Calculate days between PO creation and final goods receipt
-        const finalReceipt = po.goodsReceipts.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())[0];
+        const finalReceipt = po.goodsReceipts.sort(
+          (a, b) => b.createdAt.getTime() - a.createdAt.getTime()
+        )[0];
         const diffMs = finalReceipt.createdAt.getTime() - po.createdAt.getTime();
         totalLeadTimeDays += diffMs / (1000 * 60 * 60 * 24);
       }
@@ -581,7 +667,7 @@ export class PrismaProcurementRepository {
         totalOrdersFulfilled: totalOrders,
         calculatedAt: new Date(),
         calculationVersion: 'v1',
-      }
+      },
     });
   }
 }

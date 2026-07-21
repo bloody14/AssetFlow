@@ -58,7 +58,10 @@ export class InventoryService {
     return this.repo.getInventoryItem(id);
   }
 
-  async updateInventoryItem(id: string, data: UpdateInventoryItemDTO): Promise<InventoryItemDomain> {
+  async updateInventoryItem(
+    id: string,
+    data: UpdateInventoryItemDTO
+  ): Promise<InventoryItemDomain> {
     return this.repo.updateInventoryItem(id, data);
   }
 
@@ -77,22 +80,26 @@ export class InventoryService {
   async consumeStock(data: ConsumeStockDTO, actorId: string): Promise<StockTransactionDomain> {
     const tx = await this.repo.consumeStock(data, actorId);
     eventBus.publish('StockConsumed', { transaction: tx }, actorId);
-    
+
     // Check for Low Stock
     const stockLevel = await this.repo.getStockLevel(data.inventoryItemId, data.warehouseId);
     const item = await this.repo.getInventoryItem(data.inventoryItemId);
-    
+
     if (stockLevel.quantityAvailable <= item.reorderPoint) {
-      eventBus.publish('LowStockDetected', {
-        inventoryItemId: item.id,
-        warehouseId: stockLevel.warehouseId,
-        quantityAvailable: stockLevel.quantityAvailable,
-        reorderPoint: item.reorderPoint,
-        reorderQuantity: item.reorderQuantity,
-        detectedAt: new Date(),
-      }, actorId);
+      eventBus.publish(
+        'LowStockDetected',
+        {
+          inventoryItemId: item.id,
+          warehouseId: stockLevel.warehouseId,
+          quantityAvailable: stockLevel.quantityAvailable,
+          reorderPoint: item.reorderPoint,
+          reorderQuantity: item.reorderQuantity,
+          detectedAt: new Date(),
+        },
+        actorId
+      );
     }
-    
+
     return tx;
   }
 
@@ -113,21 +120,35 @@ export class InventoryService {
     return reservation;
   }
 
-  async fulfillReservation(id: string, actorId: string): Promise<{ reservation: StockReservationDomain, transaction: StockTransactionDomain }> {
+  async fulfillReservation(
+    id: string,
+    actorId: string
+  ): Promise<{ reservation: StockReservationDomain; transaction: StockTransactionDomain }> {
     const result = await this.repo.fulfillReservation(id, actorId);
-    eventBus.publish('ReservationFulfilled', { reservation: result.reservation, transaction: result.transaction }, actorId);
+    eventBus.publish(
+      'ReservationFulfilled',
+      { reservation: result.reservation, transaction: result.transaction },
+      actorId
+    );
     // Note: We also emit StockConsumed here because a fulfillment consumes stock
     eventBus.publish('StockConsumed', { transaction: result.transaction }, actorId);
     return result;
   }
 
-  async cancelReservation(id: string, actorId: string, reason: 'CANCELLED' | 'EXPIRED' = 'CANCELLED'): Promise<StockReservationDomain> {
+  async cancelReservation(
+    id: string,
+    actorId: string,
+    reason: 'CANCELLED' | 'EXPIRED' = 'CANCELLED'
+  ): Promise<StockReservationDomain> {
     const reservation = await this.repo.cancelReservation(id, actorId, reason);
     eventBus.publish('ReservationCancelled', { reservation, reason }, actorId);
     return reservation;
   }
 
-  async getActiveReservations(inventoryItemId: string, warehouseId: string): Promise<StockReservationDomain[]> {
+  async getActiveReservations(
+    inventoryItemId: string,
+    warehouseId: string
+  ): Promise<StockReservationDomain[]> {
     return this.repo.getActiveReservations(inventoryItemId, warehouseId);
   }
 
@@ -136,12 +157,19 @@ export class InventoryService {
     return this.repo.startCycleCount(data, actorId);
   }
 
-  async recordCount(cycleCountId: string, data: RecordCountDTO, _actorId: string): Promise<CycleCountItemDomain> {
+  async recordCount(
+    cycleCountId: string,
+    data: RecordCountDTO,
+    _actorId: string
+  ): Promise<CycleCountItemDomain> {
     // Ideally verify actorId has access, for now pass through
     return this.repo.recordCount(cycleCountId, data);
   }
 
-  async completeCycleCount(id: string, actorId: string): Promise<{ cycleCount: CycleCountDomain, transactions: StockTransactionDomain[] }> {
+  async completeCycleCount(
+    id: string,
+    actorId: string
+  ): Promise<{ cycleCount: CycleCountDomain; transactions: StockTransactionDomain[] }> {
     const result = await this.repo.completeCycleCount(id, actorId);
     eventBus.publish('CycleCountCompleted', { cycleCount: result.cycleCount }, actorId);
     if (result.transactions.length > 0) {

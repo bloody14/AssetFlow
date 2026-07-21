@@ -29,14 +29,17 @@ export class PrismaUserRepository implements IUserRepository {
     return users.map((u) => this.mapToDomain(u));
   }
 
-  async findAllPaginated(skip: number, take: number): Promise<{ data: UserDomain[], total: number }> {
+  async findAllPaginated(
+    skip: number,
+    take: number
+  ): Promise<{ data: UserDomain[]; total: number }> {
     const [users, total] = await Promise.all([
       prisma.user.findMany({ skip, take }),
-      prisma.user.count()
+      prisma.user.count(),
     ]);
     return {
       data: users.map((u) => this.mapToDomain(u)),
-      total
+      total,
     };
   }
 

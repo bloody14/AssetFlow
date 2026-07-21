@@ -1,5 +1,5 @@
-import winston from 'winston';
 import { AsyncLocalStorage } from 'async_hooks';
+import winston from 'winston';
 
 export interface LogContext {
   correlationId: string;
@@ -33,7 +33,5 @@ export const logger = winston.createLogger({
     formatContext(),
     winston.format.json()
   ),
-  transports: [
-    new winston.transports.Console()
-  ]
+  transports: [new winston.transports.Console()],
 });

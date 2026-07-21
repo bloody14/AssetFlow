@@ -26,7 +26,10 @@ export class InventoryController {
 
   updateWarehouse = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const warehouse = await this.inventoryService.updateWarehouse(req.params.id as string, req.body);
+      const warehouse = await this.inventoryService.updateWarehouse(
+        req.params.id as string,
+        req.body
+      );
       sendSuccess(res, 'Warehouse updated successfully', warehouse);
     } catch (error) {
       next(error);
@@ -73,7 +76,10 @@ export class InventoryController {
 
   updateInventoryItem = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const item = await this.inventoryService.updateInventoryItem(req.params.id as string, req.body);
+      const item = await this.inventoryService.updateInventoryItem(
+        req.params.id as string,
+        req.body
+      );
       sendSuccess(res, 'Inventory item updated successfully', item);
     } catch (error) {
       next(error);
@@ -83,7 +89,10 @@ export class InventoryController {
   // --- Stock Level ---
   getStockLevel = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const stockLevel = await this.inventoryService.getStockLevel(req.params.itemId as string, req.params.warehouseId as string);
+      const stockLevel = await this.inventoryService.getStockLevel(
+        req.params.itemId as string,
+        req.params.warehouseId as string
+      );
       sendSuccess(res, 'Stock level retrieved successfully', stockLevel);
     } catch (error) {
       next(error);
@@ -123,7 +132,9 @@ export class InventoryController {
 
   getInventoryTimeline = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const timeline = await this.inventoryService.getInventoryTimeline(req.params.itemId as string);
+      const timeline = await this.inventoryService.getInventoryTimeline(
+        req.params.itemId as string
+      );
       sendSuccess(res, 'Inventory timeline retrieved successfully', timeline);
     } catch (error) {
       next(error);
@@ -144,7 +155,10 @@ export class InventoryController {
   fulfillReservation = async (req: Request, res: Response, next: NextFunction) => {
     try {
       const _actorId = (req as any).user.id;
-      const result = await this.inventoryService.fulfillReservation(req.params.id as string, _actorId);
+      const result = await this.inventoryService.fulfillReservation(
+        req.params.id as string,
+        _actorId
+      );
       sendSuccess(res, 'Reservation fulfilled successfully', result);
     } catch (error) {
       next(error);
@@ -155,7 +169,11 @@ export class InventoryController {
     try {
       const actorId = (req as any).user.id;
       const reason = req.body.reason || 'CANCELLED';
-      const reservation = await this.inventoryService.cancelReservation(req.params.id as string, actorId, reason);
+      const reservation = await this.inventoryService.cancelReservation(
+        req.params.id as string,
+        actorId,
+        reason
+      );
       sendSuccess(res, 'Reservation cancelled successfully', reservation);
     } catch (error) {
       next(error);
@@ -164,7 +182,10 @@ export class InventoryController {
 
   getActiveReservations = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const reservations = await this.inventoryService.getActiveReservations(req.params.itemId as string, req.params.warehouseId as string);
+      const reservations = await this.inventoryService.getActiveReservations(
+        req.params.itemId as string,
+        req.params.warehouseId as string
+      );
       sendSuccess(res, 'Active reservations retrieved successfully', reservations);
     } catch (error) {
       next(error);
@@ -185,7 +206,11 @@ export class InventoryController {
   recordCount = async (req: Request, res: Response, next: NextFunction) => {
     try {
       const actorId = (req as any).user.id;
-      const item = await this.inventoryService.recordCount(req.params.id as string, req.body, actorId);
+      const item = await this.inventoryService.recordCount(
+        req.params.id as string,
+        req.body,
+        actorId
+      );
       sendSuccess(res, 'Count recorded successfully', item);
     } catch (error) {
       next(error);
@@ -195,7 +220,10 @@ export class InventoryController {
   completeCycleCount = async (req: Request, res: Response, next: NextFunction) => {
     try {
       const actorId = (req as any).user.id;
-      const result = await this.inventoryService.completeCycleCount(req.params.id as string, actorId);
+      const result = await this.inventoryService.completeCycleCount(
+        req.params.id as string,
+        actorId
+      );
       sendSuccess(res, 'Cycle count completed successfully', result);
     } catch (error) {
       next(error);

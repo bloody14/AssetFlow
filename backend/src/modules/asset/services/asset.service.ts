@@ -43,15 +43,23 @@ export class AssetService {
     const context = asyncLocalStorage.getStore();
     const actorId = context?.userId || 'SYSTEM';
 
-    const asset = await this.repo.createWithTimeline(data, actorId, actorId === 'SYSTEM' ? 'SYSTEM' : 'USER');
-    
-    eventBus.publish('AssetCreated', {
-      assetId: asset.id,
-      assetTag: asset.assetTag,
-      inventoryItemId: data.categoryId, // For lack of a better mapping right now
-      createdAt: asset.createdAt
-    }, actorId);
-    
+    const asset = await this.repo.createWithTimeline(
+      data,
+      actorId,
+      actorId === 'SYSTEM' ? 'SYSTEM' : 'USER'
+    );
+
+    eventBus.publish(
+      'AssetCreated',
+      {
+        assetId: asset.id,
+        assetTag: asset.assetTag,
+        inventoryItemId: data.categoryId, // For lack of a better mapping right now
+        createdAt: asset.createdAt,
+      },
+      actorId
+    );
+
     return asset;
   }
 
@@ -61,7 +69,10 @@ export class AssetService {
     return asset;
   }
 
-  async getAllAssets(page: number = 1, limit: number = 20): Promise<{ data: AssetDomain[], total: number }> {
+  async getAllAssets(
+    page: number = 1,
+    limit: number = 20
+  ): Promise<{ data: AssetDomain[]; total: number }> {
     const skip = (page - 1) * limit;
     return this.repo.findAllPaginated(skip, limit);
   }
