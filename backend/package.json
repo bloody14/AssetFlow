@@ -14,8 +14,9 @@
     "typecheck": "tsc -p tsconfig.build.json --noEmit",
     "prisma": "prisma",
     "seed": "tsx prisma/seed.ts",
-    "test": "vitest run",
-    "test:coverage": "vitest run --coverage"
+    "test": "vitest run tests/unit",
+    "test:coverage": "vitest run tests/unit --coverage",
+    "postinstall": "prisma generate"
   },
   "prisma": {
     "seed": "ts-node prisma/seed.ts"
