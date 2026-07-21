@@ -1,0 +1,51 @@
+### Environment Variables
+@baseUrl = http://localhost:3000/api/v1
+
+### 1. Health Checks
+GET http://localhost:3000/health
+###
+GET http://localhost:3000/live
+
+### 2. Authentication
+
+# Register an Admin User
+# @name register
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+
+{
+  "email": "admin@assetflow.com",
+  "password": "Password123!",
+  "firstName": "System",
+  "lastName": "Admin"
+}
+
+###
+# Login (Captures token for subsequent requests)
+# @name login
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@assetflow.com",
+  "password": "Password123!"
+}
+
+### Set the Auth Token Variable from the Login Response
+@authToken = {{login.response.body.data.accessToken}}
+
+### 3. Departments
+# Create a Department (Requires Auth Token)
+POST {{baseUrl}}/departments
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "name": "Engineering",
+  "costCenter": "CC-ENG-01",
+  "managerId": "{{login.response.body.data.user.id}}"
+}
+
+### Get All Departments
+GET {{baseUrl}}/departments
+Authorization: Bearer {{authToken}}

@@ -20,14 +20,14 @@ class EventBus {
     });
   }
 
-  public publish<T = unknown>(eventType: string, payload: T, actorId: string, actorType: string = 'USER'): void {
+  public publish<T = unknown>(eventType: string, payload: T, actorId: string, actorType: string = 'USER', explicitCorrelationId?: string): void {
     const context = asyncLocalStorage.getStore();
     
     const event: DomainEvent<T> = {
       eventId: uuidv4(),
       eventType,
       timestamp: new Date(),
-      correlationId: context?.correlationId,
+      correlationId: explicitCorrelationId || context?.correlationId,
       actor: {
         id: actorId,
         type: actorType,
@@ -36,7 +36,7 @@ class EventBus {
       payload,
     };
 
-    logger.info(`Publishing Domain Event: ${eventType}`, { eventId: event.eventId, actorId });
+    logger.info(`Publishing Domain Event: ${eventType}`, { eventId: event.eventId, actorId, correlationId: event.correlationId });
     this.emitter.emit(eventType, event);
   }
 }

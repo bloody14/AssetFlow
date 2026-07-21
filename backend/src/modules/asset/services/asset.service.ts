@@ -45,7 +45,12 @@ export class AssetService {
 
     const asset = await this.repo.createWithTimeline(data, actorId, actorId === 'SYSTEM' ? 'SYSTEM' : 'USER');
     
-    eventBus.publish('AssetPurchased', asset, actorId);
+    eventBus.publish('AssetCreated', {
+      assetId: asset.id,
+      assetTag: asset.assetTag,
+      inventoryItemId: data.categoryId, // For lack of a better mapping right now
+      createdAt: asset.createdAt
+    }, actorId);
     
     return asset;
   }

@@ -77,6 +77,22 @@ export class InventoryService {
   async consumeStock(data: ConsumeStockDTO, actorId: string): Promise<StockTransactionDomain> {
     const tx = await this.repo.consumeStock(data, actorId);
     eventBus.publish('StockConsumed', { transaction: tx }, actorId);
+    
+    // Check for Low Stock
+    const stockLevel = await this.repo.getStockLevel(data.inventoryItemId, data.warehouseId);
+    const item = await this.repo.getInventoryItem(data.inventoryItemId);
+    
+    if (stockLevel.quantityAvailable <= item.reorderPoint) {
+      eventBus.publish('LowStockDetected', {
+        inventoryItemId: item.id,
+        warehouseId: stockLevel.warehouseId,
+        quantityAvailable: stockLevel.quantityAvailable,
+        reorderPoint: item.reorderPoint,
+        reorderQuantity: item.reorderQuantity,
+        detectedAt: new Date(),
+      }, actorId);
+    }
+    
     return tx;
   }
 

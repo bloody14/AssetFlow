@@ -10,6 +10,11 @@ import assetAllocationRoutes from './modules/assetAllocation/routes/assetAllocat
 import bookingRoutes from './modules/booking/routes/booking.routes';
 import maintenanceRoutes from './modules/maintenance/routes/maintenance.routes';
 import reportingRoutes from './modules/reporting/routes/reporting.routes';
+import procurementRoutes from './modules/procurement/routes/procurement.routes';
+import { GoodsReceiptConsumer } from './modules/inventory/consumers/goods-receipt.consumer';
+import { StockReceivedConsumer } from './modules/asset/consumers/stock-received.consumer';
+import { LowStockConsumer } from './modules/procurement/consumers/low-stock.consumer';
+import { NotificationConsumer } from './modules/notifications/consumers/notification.consumer';
 import { errorHandler } from './shared/errorHandler';
 import * as healthController from './controllers/health.controller';
 import { env } from './config/env';
@@ -68,6 +73,20 @@ app.use('/api/v1/asset-allocations', assetAllocationRoutes);
 app.use('/api/v1/bookings', bookingRoutes);
 app.use('/api/v1/maintenance', maintenanceRoutes);
 app.use('/api/v1/reporting', reportingRoutes);
+app.use('/api/v1/procurement', procurementRoutes);
+
+// Register Consumers
+const goodsReceiptConsumer = new GoodsReceiptConsumer();
+goodsReceiptConsumer.register();
+
+const stockReceivedConsumer = new StockReceivedConsumer();
+stockReceivedConsumer.register();
+
+const lowStockConsumer = new LowStockConsumer();
+lowStockConsumer.register();
+
+const notificationConsumer = new NotificationConsumer();
+notificationConsumer.register();
 
 app.use(errorHandler);
 

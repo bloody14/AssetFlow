@@ -179,6 +179,21 @@ export class PrismaInventoryRepository {
 
   async receiveStock(data: ReceiveStockDTO, actorId: string): Promise<StockTransactionDomain> {
     const result = await prisma.$transaction(async (tx) => {
+      // Idempotency check: if referenceId is provided, ensure we haven't already processed it
+      if (data.referenceId) {
+        const existingTx = await tx.stockTransaction.findFirst({
+          where: {
+            referenceId: data.referenceId,
+            type: 'IN',
+            inventoryItemId: data.inventoryItemId,
+            warehouseId: data.warehouseId
+          }
+        });
+        if (existingTx) {
+          return existingTx;
+        }
+      }
+
       // Upsert stock level
       await tx.stockLevel.upsert({
         where: { inventoryItemId_warehouseId: { inventoryItemId: data.inventoryItemId, warehouseId: data.warehouseId } },

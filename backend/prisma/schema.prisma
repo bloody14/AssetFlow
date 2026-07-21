@@ -31,10 +31,13 @@ model User {
   maintenanceReported MaintenanceRequest[] @relation("ReportedBy")
   maintenanceAssigned MaintenanceRequest[] @relation("Technician")
 
-  managedWarehouses Warehouse[] @relation("WarehouseManager")
-  stockTransactions StockTransaction[] @relation("StockTransactions")
-  stockReservations StockReservation[] @relation("StockReservations")
-  cycleCounts       CycleCount[]       @relation("CycleCounts")
+  managedWarehouses     Warehouse[]        @relation("WarehouseManager")
+  stockTransactions     StockTransaction[] @relation("StockTransactions")
+  stockReservations     StockReservation[] @relation("StockReservations")
+  cycleCounts           CycleCount[]       @relation("CycleCounts")
+  purchaseRequests      PurchaseRequest[]  @relation("PRRequester")
+  purchaseRequestApprovals PurchaseRequestApproval[] @relation("PRApprover")
+  goodsReceiptsReceived GoodsReceipt[]           @relation("GoodsReceiver")
 
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
@@ -65,6 +68,7 @@ model Department {
   status             DepartmentStatus @default(ACTIVE)
   users              User[]
   assets             Asset[]
+  purchaseRequests   PurchaseRequest[]
 
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
@@ -349,9 +353,10 @@ enum WarehouseStatus {
 }
 
 model InventoryCategory {
-  id          String   @id @default(uuid())
-  name        String   @unique
-  description String?
+  id           String   @id @default(uuid())
+  name         String   @unique
+  description  String?
+  isFixedAsset Boolean  @default(false)
 
   items InventoryItem[]
 
@@ -371,9 +376,13 @@ model InventoryItem {
   reorderQuantity Int              @default(0)
 
   stockLevels       StockLevel[]
-  stockTransactions StockTransaction[]
-  stockReservations StockReservation[]
-  cycleCountItems   CycleCountItem[]
+  stockTransactions    StockTransaction[]
+  stockReservations    StockReservation[]
+  cycleCountItems      CycleCountItem[]
+  supplierCatalogItems SupplierCatalogItem[]
+  purchaseRequestItems PurchaseRequestItem[]
+  purchaseOrderItems   PurchaseOrderItem[]
+  goodsReceiptItems    GoodsReceiptItem[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -510,4 +519,275 @@ enum AdjustmentReason {
   OBSOLESCENCE
   FOUND
   OTHER
+}
+
+// ------------------------------------------------------
+// Epic 4: Procurement Platform
+// ------------------------------------------------------
+
+model Supplier {
+  id              String   @id @default(uuid())
+  name            String   @unique
+  code            String?  @unique
+  taxId           String?
+  website         String?
+  status          SupplierStatus @default(PENDING_APPROVAL)
+  
+  rating          Float?
+  leadTimeDays    Int?
+  
+  contacts        SupplierContact[]
+  catalogItems    SupplierCatalogItem[]
+  purchaseOrders  PurchaseOrder[]
+  metrics         SupplierMetrics?
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  deletedAt       DateTime?
+}
+
+enum SupplierStatus {
+  ACTIVE
+  PENDING_APPROVAL
+  INACTIVE
+  SUSPENDED
+  BLACKLISTED
+}
+
+model SupplierContact {
+  id          String   @id @default(uuid())
+  supplierId  String
+  supplier    Supplier @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+  
+  firstName   String
+  lastName    String
+  email       String
+  phone       String?
+  isPrimary   Boolean  @default(false)
+  role        String?
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([supplierId, email])
+}
+
+model SupplierCatalogItem {
+  id              String   @id @default(uuid())
+  supplierId      String
+  supplier        Supplier @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+  
+  inventoryItemId String
+  inventoryItem   InventoryItem @relation(fields: [inventoryItemId], references: [id], onDelete: Restrict)
+  
+  supplierSku     String
+  price           Float
+  currency        String   @default("USD")
+  minimumOrderQty Int      @default(1)
+  leadTimeDays    Int?
+  
+  isActive        Boolean  @default(true)
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([supplierId, inventoryItemId])
+  @@unique([supplierId, supplierSku])
+}
+
+// ------------------------------------------------------
+// Epic 4 Phase 4.2: Purchase Requests
+// ------------------------------------------------------
+
+enum PurchaseRequestPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum ApprovalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model PurchaseRequest {
+  id              String   @id @default(uuid())
+  requesterId     String
+  requester       User     @relation("PRRequester", fields: [requesterId], references: [id])
+  departmentId    String
+  department      Department @relation(fields: [departmentId], references: [id])
+  
+  justification   String
+  priority        PurchaseRequestPriority @default(MEDIUM)
+  status          ApprovalStatus @default(PENDING)
+  
+  items           PurchaseRequestItem[]
+  approvals       PurchaseRequestApproval[]
+  purchaseOrders  PurchaseOrder[]
+  timelineEvents  ProcurementTimeline[]
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  deletedAt       DateTime?
+}
+
+model PurchaseRequestItem {
+  id                String   @id @default(uuid())
+  purchaseRequestId String
+  purchaseRequest   PurchaseRequest @relation(fields: [purchaseRequestId], references: [id], onDelete: Cascade)
+  
+  inventoryItemId   String
+  inventoryItem     InventoryItem @relation(fields: [inventoryItemId], references: [id], onDelete: Restrict)
+  
+  quantity          Int
+  estimatedPrice    Float?
+  currency          String   @default("USD")
+  purchaseOrderItems PurchaseOrderItem[]
+  
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}
+
+model PurchaseRequestApproval {
+  id                String   @id @default(uuid())
+  purchaseRequestId String
+  purchaseRequest   PurchaseRequest @relation(fields: [purchaseRequestId], references: [id], onDelete: Cascade)
+  
+  approverId        String
+  approver          User     @relation("PRApprover", fields: [approverId], references: [id])
+  
+  status            ApprovalStatus
+  comments          String?
+  step              Int      @default(1)
+  
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}
+
+// ------------------------------------------------------
+// Epic 4 Phase 4.3: Purchase Orders
+// ------------------------------------------------------
+
+enum PurchaseOrderStatus {
+  DRAFT
+  ISSUED
+  PARTIALLY_RECEIVED
+  FULFILLED
+  CANCELLED
+}
+
+model PurchaseOrder {
+  id                String   @id @default(uuid())
+  orderNumber       String   @unique
+  purchaseRequestId String
+  purchaseRequest   PurchaseRequest @relation(fields: [purchaseRequestId], references: [id], onDelete: Restrict)
+  
+  supplierId        String
+  supplier          Supplier @relation(fields: [supplierId], references: [id], onDelete: Restrict)
+  
+  status            PurchaseOrderStatus @default(DRAFT)
+  expectedDelivery  DateTime?
+  
+  items             PurchaseOrderItem[]
+  goodsReceipts     GoodsReceipt[]
+  timelineEvents    ProcurementTimeline[]
+  
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  deletedAt         DateTime?
+}
+
+model PurchaseOrderItem {
+  id                  String   @id @default(uuid())
+  purchaseOrderId     String
+  purchaseOrder       PurchaseOrder @relation(fields: [purchaseOrderId], references: [id], onDelete: Cascade)
+  
+  purchaseRequestItemId String?
+  purchaseRequestItem   PurchaseRequestItem? @relation(fields: [purchaseRequestItemId], references: [id], onDelete: SetNull)
+  
+  inventoryItemId     String
+  inventoryItem       InventoryItem @relation(fields: [inventoryItemId], references: [id], onDelete: Restrict)
+  
+  quantityOrdered     Int
+  quantityReceived    Int      @default(0)
+  unitPrice           Float
+  currency            String   @default("USD")
+  
+  goodsReceiptItems   GoodsReceiptItem[]
+  
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+}
+
+// ------------------------------------------------------
+// Epic 4 Phase 4.4: Goods Receipt
+// ------------------------------------------------------
+
+model GoodsReceipt {
+  id                String   @id @default(uuid())
+  receiptNumber     String   @unique
+  purchaseOrderId   String
+  purchaseOrder     PurchaseOrder @relation(fields: [purchaseOrderId], references: [id], onDelete: Restrict)
+  
+  receivedById      String
+  receivedBy        User     @relation("GoodsReceiver", fields: [receivedById], references: [id])
+  
+  items             GoodsReceiptItem[]
+  
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  deletedAt         DateTime?
+}
+
+model GoodsReceiptItem {
+  id                  String   @id @default(uuid())
+  goodsReceiptId      String
+  goodsReceipt        GoodsReceipt @relation(fields: [goodsReceiptId], references: [id], onDelete: Cascade)
+  
+  purchaseOrderItemId String
+  purchaseOrderItem   PurchaseOrderItem @relation(fields: [purchaseOrderItemId], references: [id], onDelete: Restrict)
+  
+  inventoryItemId     String
+  inventoryItem       InventoryItem @relation(fields: [inventoryItemId], references: [id], onDelete: Restrict)
+  
+  quantityReceived    Int
+  
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+}
+
+// ------------------------------------------------------
+// Epic 4 Phase 4.5: Procurement Analytics Foundation
+// ------------------------------------------------------
+
+model ProcurementTimeline {
+  id                String   @id @default(uuid())
+  
+  purchaseOrderId   String?
+  purchaseOrder     PurchaseOrder?   @relation(fields: [purchaseOrderId], references: [id], onDelete: Cascade)
+  
+  purchaseRequestId String?
+  purchaseRequest   PurchaseRequest? @relation(fields: [purchaseRequestId], references: [id], onDelete: Cascade)
+  
+  eventType         String
+  eventPayload      Json?
+  
+  createdAt         DateTime @default(now())
+}
+
+model SupplierMetrics {
+  id                   String   @id @default(uuid())
+  supplierId           String   @unique
+  supplier             Supplier @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+  
+  averageLeadTimeDays  Float    @default(0)
+  qualityScore         Float    @default(0)
+  totalOrdersFulfilled Int      @default(0)
+  
+  calculatedAt         DateTime @default(now())
+  calculationVersion   String   @default("v1")
+  
+  updatedAt            DateTime @updatedAt
 }

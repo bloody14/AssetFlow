@@ -86,6 +86,9 @@ describe('Inventory Service', () => {
     it('should consume stock and emit event', async () => {
       const mockTx = { id: 'tx2', type: 'OUT', quantity: 10 };
       mockRepo.consumeStock.mockResolvedValue(mockTx);
+      mockRepo.getStockLevel.mockResolvedValue({ warehouseId: 'w1', quantityAvailable: 20 });
+      mockRepo.getInventoryItem.mockResolvedValue({ id: 'i1', reorderPoint: 5, reorderQuantity: 50 });
+      
       const publishSpy = vi.spyOn(eventBus, 'publish').mockImplementation(() => {});
 
       const result = await service.consumeStock({ inventoryItemId: 'i1', warehouseId: 'w1', quantity: 10 }, 'actor1');
