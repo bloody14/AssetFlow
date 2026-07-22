@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { inventoryApi } from '../api/inventoryApi';
 import { warehouseApi } from '../api/warehouseApi';
+import { stockTransactionApi } from '../api/stockTransactionApi';
 import { inventoryKeys } from '../api/keys';
 
 // --- Items ---
@@ -26,6 +27,14 @@ export const useInventoryKPIs = () => {
     queryFn: inventoryApi.getKPIs,
     // KPIs can be polled frequently or refetched on focus
     refetchInterval: 30000, 
+  });
+};
+
+export const useItemTimeline = (itemId: string) => {
+  return useQuery({
+    queryKey: inventoryKeys.transactions(itemId),
+    queryFn: () => stockTransactionApi.getTimeline(itemId),
+    enabled: !!itemId,
   });
 };
 

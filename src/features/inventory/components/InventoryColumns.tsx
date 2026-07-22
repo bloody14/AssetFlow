@@ -60,7 +60,9 @@ export const inventoryColumns: ColumnDef<InventoryItem>[] = [
               Copy SKU
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>View Details</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => window.location.href = `/inventory/items/${item.id}`}>
+              View Details
+            </DropdownMenuItem>
             <DropdownMenuItem>View Timeline</DropdownMenuItem>
             <DropdownMenuItem>Adjust Stock</DropdownMenuItem>
           </DropdownMenuContent>

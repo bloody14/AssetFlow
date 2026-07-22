@@ -4,6 +4,8 @@ import { MainLayout } from '@/layouts/MainLayout';
 import { DashboardPage } from '@/features/dashboard/pages/DashboardPage';
 
 import { InventoryListPage } from '@/features/inventory/pages/InventoryListPage';
+import { InventoryDetailsPage } from '@/features/inventory/pages/InventoryDetailsPage';
+import { WarehouseListPage } from '@/features/inventory/pages/WarehouseListPage';
 
 // Placeholder for other modules
 const PlaceholderPage = ({ title }: { title: string }) => (
@@ -23,6 +25,8 @@ export const AppRoutes = () => {
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/inventory" element={<Navigate to="/inventory/items" replace />} />
           <Route path="/inventory/items" element={<InventoryListPage />} />
+          <Route path="/inventory/items/:id" element={<InventoryDetailsPage />} />
+          <Route path="/inventory/warehouses" element={<WarehouseListPage />} />
           <Route path="/procurement" element={<PlaceholderPage title="Procurement" />} />
           <Route path="/assets" element={<PlaceholderPage title="Assets" />} />
           <Route path="/notifications" element={<PlaceholderPage title="Notifications" />} />
