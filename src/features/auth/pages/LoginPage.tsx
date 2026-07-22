@@ -1,83 +1,123 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
+import { Loader2 } from 'lucide-react';
 import { useLogin } from '../hooks/useAuth';
 import { handleApiError } from '@/lib/error';
+import { Button } from '@/components/ui/Button';
+import { Input } from '@/components/ui/Input';
+import { Label } from '@/components/ui/Label';
+
+const loginSchema = z.object({
+  email: z.string().email('Please enter a valid email address.'),
+  password: z.string().min(1, 'Password is required.'),
+});
+
+type LoginFormValues = z.infer<typeof loginSchema>;
 
 export const LoginPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const loginMutation = useLogin();
-  
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState<string | null>(null);
+  const [globalError, setGlobalError] = useState<string | null>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
-    
-    loginMutation.mutate(
-      { email, password },
-      {
-        onSuccess: () => {
-          // Navigate to where they were trying to go, or dashboard
-          const from = location.state?.from?.pathname || '/dashboard';
-          navigate(from, { replace: true });
-        },
-        onError: (err) => {
-          setError(handleApiError(err));
-        },
-      }
-    );
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<LoginFormValues>({
+    resolver: zodResolver(loginSchema),
+    defaultValues: { email: '', password: '' },
+  });
+
+  const onSubmit = (values: LoginFormValues) => {
+    setGlobalError(null);
+    loginMutation.mutate(values, {
+      onSuccess: () => {
+        const from = location.state?.from?.pathname || '/dashboard';
+        navigate(from, { replace: true });
+      },
+      onError: (err) => {
+        setGlobalError(handleApiError(err));
+      },
+    });
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background">
-      <div className="w-full max-w-md p-8 space-y-6 bg-card border border-border rounded-lg shadow-sm">
-        <div className="text-center">
-          <h2 className="text-3xl font-bold tracking-tight text-primary">AssetFlow</h2>
-          <p className="text-sm text-muted-foreground mt-2">Sign in to your enterprise account</p>
+    <div className="min-h-screen flex items-center justify-center bg-background px-4 py-12 sm:px-6 lg:px-8">
+      <div className="w-full max-w-md p-8 space-y-8 bg-card border border-border rounded-xl shadow-lg">
+        <div className="text-center space-y-2">
+          <h1 className="text-3xl font-bold tracking-tight text-primary">AssetFlow</h1>
+          <p className="text-sm text-muted-foreground">Sign in to your enterprise account</p>
         </div>
 
-        {error && (
-          <div className="p-3 text-sm text-destructive-foreground bg-destructive rounded-md">
-            {error}
+        {globalError && (
+          <div className="p-4 text-sm font-medium text-destructive-foreground bg-destructive rounded-lg shadow-sm" role="alert">
+            {globalError}
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <label className="text-sm font-medium leading-none" htmlFor="email">Email</label>
-            <input
-              id="email"
-              type="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-              placeholder="admin@assetflow.com"
-            />
-          </div>
-          
-          <div className="space-y-2">
-            <label className="text-sm font-medium leading-none" htmlFor="password">Password</label>
-            <input
-              id="password"
-              type="password"
-              required
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-            />
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="email" className={errors.email ? 'text-destructive' : ''}>
+                Email address
+              </Label>
+              <Input
+                id="email"
+                type="email"
+                autoComplete="email"
+                placeholder="admin@assetflow.com"
+                aria-invalid={!!errors.email}
+                aria-describedby={errors.email ? 'email-error' : undefined}
+                {...register('email')}
+                className={errors.email ? 'border-destructive focus-visible:ring-destructive' : ''}
+              />
+              {errors.email && (
+                <p id="email-error" className="text-xs font-medium text-destructive">
+                  {errors.email.message}
+                </p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="password" className={errors.password ? 'text-destructive' : ''}>
+                Password
+              </Label>
+              <Input
+                id="password"
+                type="password"
+                autoComplete="current-password"
+                aria-invalid={!!errors.password}
+                aria-describedby={errors.password ? 'password-error' : undefined}
+                {...register('password')}
+                className={errors.password ? 'border-destructive focus-visible:ring-destructive' : ''}
+              />
+              {errors.password && (
+                <p id="password-error" className="text-xs font-medium text-destructive">
+                  {errors.password.message}
+                </p>
+              )}
+            </div>
           </div>
 
-          <button
+          <Button
             type="submit"
+            className="w-full h-11 text-base font-semibold"
             disabled={loginMutation.isPending}
-            className="inline-flex items-center justify-center w-full h-10 px-4 py-2 text-sm font-medium transition-colors rounded-md bg-primary text-primary-foreground hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none"
+            aria-disabled={loginMutation.isPending}
           >
-            {loginMutation.isPending ? 'Signing in...' : 'Sign In'}
-          </button>
+            {loginMutation.isPending ? (
+              <>
+                <Loader2 className="mr-2 h-5 w-5 animate-spin" aria-hidden="true" />
+                Signing in...
+              </>
+            ) : (
+              'Sign In'
+            )}
+          </Button>
         </form>
       </div>
     </div>
