@@ -3,6 +3,8 @@ import { LoginPage, ProtectedRoute } from '@/features/auth';
 import { MainLayout } from '@/layouts/MainLayout';
 import { DashboardPage } from '@/features/dashboard/pages/DashboardPage';
 
+import { InventoryListPage } from '@/features/inventory/pages/InventoryListPage';
+
 // Placeholder for other modules
 const PlaceholderPage = ({ title }: { title: string }) => (
   <div className="p-8">
@@ -19,7 +21,8 @@ export const AppRoutes = () => {
       <Route element={<ProtectedRoute />}>
         <Route element={<MainLayout />}>
           <Route path="/dashboard" element={<DashboardPage />} />
-          <Route path="/inventory" element={<PlaceholderPage title="Inventory" />} />
+          <Route path="/inventory" element={<Navigate to="/inventory/items" replace />} />
+          <Route path="/inventory/items" element={<InventoryListPage />} />
           <Route path="/procurement" element={<PlaceholderPage title="Procurement" />} />
           <Route path="/assets" element={<PlaceholderPage title="Assets" />} />
           <Route path="/notifications" element={<PlaceholderPage title="Notifications" />} />
