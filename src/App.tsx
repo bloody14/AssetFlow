@@ -1,6 +1,9 @@
 import React, { useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { AppRoutes } from './routes';
+import { ThemeProvider } from './components/providers/ThemeProvider';
+import { LayoutProvider } from './components/providers/LayoutProvider';
+import { NotificationProvider } from './components/providers/NotificationProvider';
 
 // A simple global error boundary for the top level app.
 class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean; error: Error | null }> {
@@ -47,9 +50,15 @@ function App() {
 
   return (
     <ErrorBoundary>
-      <div className="min-h-screen bg-background font-sans antialiased">
-        <AppRoutes />
-      </div>
+      <ThemeProvider defaultTheme="system" storageKey="assetflow-theme">
+        <NotificationProvider>
+          <LayoutProvider>
+            <div className="min-h-screen bg-background font-sans antialiased">
+              <AppRoutes />
+            </div>
+          </LayoutProvider>
+        </NotificationProvider>
+      </ThemeProvider>
     </ErrorBoundary>
   );
 }
