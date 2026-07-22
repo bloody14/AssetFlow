@@ -1,4 +1,6 @@
-import React from 'react';
+import React, { useEffect } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
+import { AppRoutes } from './routes';
 
 // A simple global error boundary for the top level app.
 class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean; error: Error | null }> {
@@ -27,13 +29,26 @@ class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { has
 }
 
 function App() {
+  const queryClient = useQueryClient();
+
+  useEffect(() => {
+    // Listen for global unauthorized events to reset state and redirect
+    const handleUnauthorized = () => {
+      queryClient.clear();
+      // Only redirect if not already on login
+      if (!window.location.pathname.includes('/login')) {
+        window.location.href = '/login';
+      }
+    };
+
+    window.addEventListener('unauthorized', handleUnauthorized);
+    return () => window.removeEventListener('unauthorized', handleUnauthorized);
+  }, [queryClient]);
+
   return (
     <ErrorBoundary>
-      <div className="min-h-screen bg-background text-foreground flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-4xl font-bold tracking-tight text-primary mb-4">AssetFlow Enterprise Platform</h1>
-          <p className="text-muted-foreground text-lg">Phase 6.1 Initialization Complete.</p>
-        </div>
+      <div className="min-h-screen bg-background font-sans antialiased">
+        <AppRoutes />
       </div>
     </ErrorBoundary>
   );
