@@ -23,7 +23,6 @@ import {
   DropdownMenuLabel, 
   DropdownMenuSeparator 
 } from '@/components/ui/DropdownMenu';
-import { useState } from 'react';
 
 export const Header = () => {
   const { toggleSidebar, setMobileSidebarOpen } = useLayout();
@@ -32,8 +31,6 @@ export const Header = () => {
   const logoutMutation = useLogout();
   const location = useLocation();
 
-  const [isProfileOpen, setIsProfileOpen] = useState(false);
-  const [isThemeOpen, setIsThemeOpen] = useState(false);
 
   // Generate Breadcrumbs
   const currentPath = location.pathname;
@@ -95,32 +92,32 @@ export const Header = () => {
         </Button>
 
         <DropdownMenu>
-          <DropdownMenuTrigger onClick={() => setIsThemeOpen(!isThemeOpen)}>
+          <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="icon">
               {theme === 'dark' ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
               <span className="sr-only">Toggle theme</span>
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent isOpen={isThemeOpen} align="right">
-            <DropdownMenuItem onClick={() => { setTheme('light'); setIsThemeOpen(false); }}>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={() => setTheme('light')}>
               Light
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => { setTheme('dark'); setIsThemeOpen(false); }}>
+            <DropdownMenuItem onClick={() => setTheme('dark')}>
               Dark
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => { setTheme('system'); setIsThemeOpen(false); }}>
+            <DropdownMenuItem onClick={() => setTheme('system')}>
               System
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
 
         <DropdownMenu>
-          <DropdownMenuTrigger onClick={() => setIsProfileOpen(!isProfileOpen)}>
+          <DropdownMenuTrigger asChild>
             <Avatar className="h-8 w-8 cursor-pointer border border-border">
               <AvatarFallback>{user?.name?.charAt(0) || 'U'}</AvatarFallback>
             </Avatar>
           </DropdownMenuTrigger>
-          <DropdownMenuContent isOpen={isProfileOpen} align="right">
+          <DropdownMenuContent align="end">
             <DropdownMenuLabel>
               <div className="flex flex-col space-y-1">
                 <p className="text-sm font-medium leading-none">{user?.name || 'User'}</p>
@@ -128,12 +125,12 @@ export const Header = () => {
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => setIsProfileOpen(false)}>
+            <DropdownMenuItem>
               <UserIcon className="mr-2 h-4 w-4" />
               <span>Profile</span>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => { setIsProfileOpen(false); logoutMutation.mutate(); }}>
+            <DropdownMenuItem onClick={() => logoutMutation.mutate()}>
               <LogOut className="mr-2 h-4 w-4" />
               <span>Log out</span>
             </DropdownMenuItem>
